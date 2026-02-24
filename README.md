@@ -2,7 +2,7 @@
 
 A simple personal budgeting web app
 
-Frontend design
+##Frontend design
 ```mermaid
 flowchart TB
 A["App Shell"] --> B["Left Nav / Bottom Tabs"]
@@ -23,6 +23,8 @@ T --> T1["Search + filters + bulk edit"]
 G --> G1["Category budget editor"]
 R --> R1["Monthly trend + cashflow charts"]
 ```
+
+## DB schema
 ```mermaid
 erDiagram
     %% Auth Mirror
