@@ -2,7 +2,7 @@
 
 A simple personal budgeting web app
 
-##Frontend design
+## Frontend design
 ```mermaid
 flowchart TB
 A["App Shell"] --> B["Left Nav / Bottom Tabs"]
