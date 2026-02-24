@@ -23,7 +23,7 @@ T --> T1["Search + filters + bulk edit"]
 G --> G1["Category budget editor"]
 R --> R1["Monthly trend + cashflow charts"]
 ```
-```aiignore
+```mermaid
 erDiagram
     %% Auth Mirror
     profiles {
