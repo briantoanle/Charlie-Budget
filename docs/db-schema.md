@@ -6,6 +6,7 @@ erDiagram
     profiles {
         uuid id PK
         text display_name
+        text base_currency
         timestamptz created_at
     }
 
