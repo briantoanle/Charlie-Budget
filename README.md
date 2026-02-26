@@ -2,11 +2,36 @@
 
 A personal budgeting and investment tracking web app
 
+## Local Dev
+
+```bash
+# 1. Start local Supabase (Docker must be running)
+npx supabase start
+
+# 2. Set up env
+cp web/.env.local.example web/.env.local
+# Fill in the keys printed by `supabase start`
+
+# 3. Reset DB (applies all migrations + seeds test data)
+npx supabase db reset
+
+# 4. Run the app
+cd web && npm run dev
+```
+
+**Test login:** `test@charlie.dev` / `password123`
+
+See [docs/supabase-setup.md](docs/supabase-setup.md) for Plaid sandbox setup and production deployment.
+
+---
+
 ## Tech Stack
 
 | Layer | Technology | Purpose |
 |-------|-----------|---------|
 | Frontend | [Next.js](https://nextjs.org/) (App Router) | UI, server components, route handlers |
+| UI Components | [shadcn/ui](https://ui.shadcn.com/) + [Tailwind CSS v4](https://tailwindcss.com/) | Component library + styling |
+| Data Fetching | [TanStack Query v5](https://tanstack.com/query) | Client-side fetching, caching, mutations |
 | Database & Auth | [Supabase](https://supabase.com/) (PostgreSQL) | Data storage, auth, RLS, edge functions |
 | Bank Connectivity | [Plaid](https://plaid.com/) | Account linking, transaction sync |
 | Currency Conversion | [Open Exchange Rates](https://openexchangerates.org/) | FX rates |
@@ -104,3 +129,12 @@ flowchart TB
 ## DB Schema
 
 See [docs/db-schema.md](docs/db-schema.md)
+
+## Docs
+
+| Doc | What it covers |
+|-----|---------------|
+| [docs/db-schema.md](docs/db-schema.md) | Full ERD |
+| [docs/api-routes.md](docs/api-routes.md) | All API routes — methods, request/response shapes, errors |
+| [docs/frontend-flow.md](docs/frontend-flow.md) | User flows per feature |
+| [docs/supabase-setup.md](docs/supabase-setup.md) | Local dev, Plaid sandbox, and production deployment |
