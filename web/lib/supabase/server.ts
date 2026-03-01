@@ -1,27 +1,29 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import type { Database } from "@/lib/supabase/database.types";
 
-export function supabaseServer() {
-    const cookieStore = cookies();
+export async function supabaseServer() {
+  const cookieStore = await cookies();
 
-    return createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        {
-            cookies: {
-                getAll() {
-                    return cookieStore.getAll();
-                },
-                setAll(cookiesToSet) {
-                    // Next.js may throw if you set cookies in some server contexts; that's OK.
-                    // Auth flows typically set cookies in Route Handlers / Server Actions.
-                    try {
-                        cookiesToSet.forEach(({ name, value, options }) => {
-                            cookieStore.set(name, value, options);
-                        });
-                    } catch {}
-                },
-            },
-        }
-    );
+  return createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              cookieStore.set(name, value, options);
+            });
+          } catch {
+            // Swallowed in read-only contexts (Server Components).
+            // Auth flows set cookies in Route Handlers / Server Actions.
+          }
+        },
+      },
+    }
+  );
 }

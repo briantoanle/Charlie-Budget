@@ -188,6 +188,36 @@ Returns all non-archived accounts for the authenticated user, joined with Plaid 
 
 ---
 
+### `POST /api/accounts`
+
+Creates a manual account (not linked to Plaid).
+
+**Request body**
+```json
+{
+  "name": "Main Checking",
+  "type": "checking",
+  "currency": "USD",
+  "current_balance": 4250.00
+}
+```
+
+| Field | Required | Default |
+|---|---|---|
+| `name` | Yes | — |
+| `type` | Yes | — |
+| `currency` | No | `"USD"` |
+| `current_balance` | No | `null` |
+
+**Response:** `201` + created account object with `source: "manual"`.
+
+**Errors**
+| Status | Reason |
+|---|---|
+| `400` | `name` or `type` missing |
+
+---
+
 ### `PATCH /api/accounts/[id]`
 
 Updates user-editable fields on an account.
@@ -274,6 +304,45 @@ Returns a paginated, filterable list of transactions for the authenticated user.
 ```
 
 **Notes:** Excludes soft-deleted rows (`deleted_at IS NULL`). Joins `categories` and `accounts` for display names.
+
+---
+
+### `POST /api/transactions`
+
+Creates a manual transaction (not synced from Plaid).
+
+**Request body**
+```json
+{
+  "account_id": "uuid",
+  "txn_date": "2026-02-25",
+  "amount": -52.40,
+  "category_id": "uuid",
+  "merchant": "Whole Foods",
+  "note": "Weekly groceries",
+  "currency": "USD"
+}
+```
+
+| Field | Required | Default |
+|---|---|---|
+| `account_id` | Yes | — |
+| `txn_date` | Yes | — |
+| `amount` | Yes | — |
+| `category_id` | No | `null` |
+| `merchant` | No | `null` |
+| `note` | No | `null` |
+| `currency` | No | `"USD"` |
+
+**Response:** `201` + created transaction object with `source: "manual"`.
+
+**Errors**
+| Status | Reason |
+|---|---|
+| `400` | `account_id`, `txn_date`, or `amount` missing |
+| `404` | Account not found |
+
+**Notes:** `amount_base` is set equal to `amount` (same currency assumed for MVP). `pending` defaults to `false`.
 
 ---
 

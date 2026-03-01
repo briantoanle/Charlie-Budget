@@ -1,28 +1,31 @@
-import { createBrowserClient } from "@supabase/ssr";
-import type { Database } from "@/lib/supabase/database.types"; 
+import type { Database } from "@/lib/supabase/database.types";
 
-/*
- * FEATURE: Supabase Browser Client
- * PRINCIPLE: Singleton/Factory Pattern
- * * WHY: We use this function to ensure we only have one instance of the
- * Supabase client running in the browser. This prevents multiple
- * WebSocket connections and keeps our auth state consistent.
- */
-export function supabaseBrowser() {
-    // TypeScript '!' operator tells the compiler these environment
-    // variables will definitely exist at runtime.
-    return createBrowserClient<Database>(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
-}
+export type { Database };
 
-/*
- * PRINCIPLE: Financial Precision
- * * WHY: JavaScript's 'number' type uses 64-bit floats. This causes 
- * '0.1 + 0.2' to equal '0.30000000000000004'. By using minor units
- * (like cents), we perform all math with integers, avoiding this.
- */
-export const calculateTotal = (amount: number): number => {
-    return Math.round(amount * 100); // Convert to minor units (e.g., cents)
-};
+// Helper to extract row/insert/update types from the generated schema
+type Tables = Database["public"]["Tables"];
+
+// Row types (what SELECT returns)
+export type Account = Tables["accounts"]["Row"];
+export type Category = Tables["categories"]["Row"];
+export type Transaction = Tables["transactions"]["Row"];
+export type Budget = Tables["budgets"]["Row"];
+export type BudgetLine = Tables["budget_lines"]["Row"];
+export type Profile = Tables["profiles"]["Row"];
+export type PlaidItem = Tables["plaid_items"]["Row"];
+export type FxRate = Tables["fx_rates"]["Row"];
+export type AuditLogEntry = Tables["audit_log"]["Row"];
+
+// Insert types (what INSERT accepts)
+export type AccountInsert = Tables["accounts"]["Insert"];
+export type CategoryInsert = Tables["categories"]["Insert"];
+export type TransactionInsert = Tables["transactions"]["Insert"];
+export type BudgetInsert = Tables["budgets"]["Insert"];
+export type BudgetLineInsert = Tables["budget_lines"]["Insert"];
+
+// Update types (what UPDATE accepts)
+export type AccountUpdate = Tables["accounts"]["Update"];
+export type CategoryUpdate = Tables["categories"]["Update"];
+export type TransactionUpdate = Tables["transactions"]["Update"];
+export type BudgetLineUpdate = Tables["budget_lines"]["Update"];
+export type ProfileUpdate = Tables["profiles"]["Update"];
