@@ -8,19 +8,34 @@ export async function PATCH(request: NextRequest) {
   const { user, supabase } = auth;
 
   const body = await request.json();
-  const { display_name } = body;
+  const { display_name, country } = body;
 
-  if (!display_name || typeof display_name !== "string" || !display_name.trim()) {
-    return error("display_name is required", 400);
+  const updates: any = {};
+
+  if (display_name !== undefined) {
+    if (typeof display_name !== "string" || !display_name.trim()) {
+      return error("display_name is required", 400);
+    }
+    if (display_name.length > 100) {
+      return error("display_name must be 100 characters or less", 400);
+    }
+    updates.display_name = display_name.trim();
   }
 
-  if (display_name.length > 100) {
-    return error("display_name must be 100 characters or less", 400);
+  if (country !== undefined) {
+    if (country !== "US" && country !== "CA") {
+      return error("Invalid country code", 400);
+    }
+    updates.country = country;
+  }
+
+  if (Object.keys(updates).length === 0) {
+    return error("No updates provided", 400);
   }
 
   const { data, error: dbError } = await supabase
     .from("profiles")
-    .update({ display_name: display_name.trim() })
+    .update(updates)
     .eq("id", user.id)
     .select()
     .single();

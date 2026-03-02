@@ -44,6 +44,22 @@ export async function signupAction(
     return { error: "Password must be at least 8 characters." };
   }
 
+  if (!/[a-z]/.test(password)) {
+    return { error: "Password must contain at least one lowercase letter." };
+  }
+
+  if (!/[A-Z]/.test(password)) {
+    return { error: "Password must contain at least one uppercase letter." };
+  }
+
+  if (!/[0-9]/.test(password)) {
+    return { error: "Password must contain at least one number." };
+  }
+
+  if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|<>?,.\/`~]/.test(password)) {
+    return { error: "Password must contain at least one special character." };
+  }
+
   const supabase = await supabaseServer();
   const { error } = await supabase.auth.signUp({
     email,

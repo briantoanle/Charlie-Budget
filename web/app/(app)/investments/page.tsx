@@ -12,6 +12,7 @@ import {
   type TradeResponse,
   type DividendResponse,
 } from "@/lib/api/hooks";
+import { PortfolioBreakdown } from "@/components/investments/portfolio-breakdown";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -208,43 +209,50 @@ function HoldingsTab() {
   }
 
   return (
-    <div className="space-y-4">
-      {/* Summary cards */}
-      <StaggerList className="grid grid-cols-3 gap-4">
-        <StaggerItem>
-          <div className="card-hover rounded-lg border border-border bg-card p-4">
-            <p className="text-xs text-muted-foreground">Market Value</p>
-            <AnimatedNumber
-              value={totalMarketValue}
-              format="currency"
-              className="mt-1 block text-xl font-semibold font-mono"
-            />
-          </div>
-        </StaggerItem>
-        <StaggerItem>
-          <div className="card-hover rounded-lg border border-border bg-card p-4">
-            <p className="text-xs text-muted-foreground">Cost Basis</p>
-            <AnimatedNumber
-              value={totalCostBasis}
-              format="currency"
-              className="mt-1 block text-xl font-semibold font-mono"
-            />
-          </div>
-        </StaggerItem>
-        <StaggerItem>
-          <div className="card-hover rounded-lg border border-border bg-card p-4">
-            <p className="text-xs text-muted-foreground">Unrealized P&L</p>
-            <div className="mt-1 flex items-center gap-2">
-              {totalPnl >= 0 ? (
-                <TrendingUp className="h-4 w-4 text-positive" />
-              ) : (
-                <TrendingDown className="h-4 w-4 text-destructive" />
-              )}
-              <PnlBadge value={totalPnl} pct={totalPnlPct} />
+    <div className="space-y-6">
+      <FadeIn delay={0.1}>
+        <div className="grid gap-6 lg:grid-cols-3">
+          <div className="lg:col-span-2">
+            <h3 className="mb-4 text-sm font-medium text-muted-foreground uppercase tracking-wider">Asset Allocation</h3>
+            <div className="rounded-xl border border-border bg-card/50 p-6 backdrop-blur-sm shadow-sm">
+              <PortfolioBreakdown />
             </div>
           </div>
-        </StaggerItem>
-      </StaggerList>
+          <div className="space-y-4">
+             <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Portfolio Performance</h3>
+             {/* Summary cards moved inside here for a tighter sidebar layout */}
+             <div className="grid gap-3">
+                <div className="card-hover rounded-lg border border-border bg-card p-4">
+                  <p className="text-xs text-muted-foreground">Market Value</p>
+                  <AnimatedNumber
+                    value={totalMarketValue}
+                    format="currency"
+                    className="mt-1 block text-xl font-semibold font-mono"
+                  />
+                </div>
+                <div className="card-hover rounded-lg border border-border bg-card p-4">
+                  <p className="text-xs text-muted-foreground">Cost Basis</p>
+                  <AnimatedNumber
+                    value={totalCostBasis}
+                    format="currency"
+                    className="mt-1 block text-xl font-semibold font-mono"
+                  />
+                </div>
+                <div className="card-hover rounded-lg border border-border bg-card p-4">
+                  <p className="text-xs text-muted-foreground">Unrealized P&L</p>
+                  <div className="mt-1 flex items-center gap-2">
+                    {totalPnl >= 0 ? (
+                      <TrendingUp className="h-4 w-4 text-positive" />
+                    ) : (
+                      <TrendingDown className="h-4 w-4 text-destructive" />
+                    )}
+                    <PnlBadge value={totalPnl} pct={totalPnlPct} />
+                  </div>
+                </div>
+             </div>
+          </div>
+        </div>
+      </FadeIn>
 
       {/* Holdings table */}
       <FadeIn delay={0.2}>

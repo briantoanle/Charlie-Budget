@@ -35,6 +35,7 @@ import {
   AlertTriangle,
   Check,
   Loader2,
+  MapPin,
 } from "lucide-react";
 import {
   StaggerList,
@@ -46,6 +47,7 @@ export function SettingsClientComponents() {
     <StaggerList className="space-y-6">
       <StaggerItem><ProfileSection /></StaggerItem>
       <StaggerItem><CurrencySection /></StaggerItem>
+      <StaggerItem><CountrySection /></StaggerItem>
       <StaggerItem><ConnectedAccountsSection /></StaggerItem>
       <StaggerItem><ExportSection /></StaggerItem>
       <StaggerItem><DangerZone /></StaggerItem>
@@ -174,6 +176,13 @@ function ProfileSection() {
           {updateProfile.error.message}
         </p>
       )}
+
+      <div className="mt-4 rounded-md bg-positive/5 border border-positive/20 p-3 flex items-start gap-2">
+        <AlertTriangle className="h-3.5 w-3.5 text-positive mt-0.5" />
+        <p className="text-[10px] text-muted-foreground leading-relaxed">
+          <strong>Tip:</strong> Set your country below to get accurate holiday spending predictions on your dashboard.
+        </p>
+      </div>
     </div>
   );
 }
@@ -287,7 +296,58 @@ function CurrencySection() {
 }
 
 /* ────────────────────────────────────────────────────────────────── */
-/*  3. Connected Accounts                                             */
+/*  3. Country                                                        */
+/* ────────────────────────────────────────────────────────────────── */
+
+function CountrySection() {
+  const { data: profile, isLoading } = useProfile();
+  const updateProfile = useUpdateProfile();
+
+  const handleSelect = (val: string) => {
+    updateProfile.mutate({ country: val });
+  };
+
+  if (isLoading) return <Skeleton className="h-28 rounded-lg" />;
+
+  return (
+    <div className="rounded-lg border border-border bg-card p-5">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-muted">
+          <MapPin className="h-4 w-4 text-muted-foreground" />
+        </div>
+        <div>
+          <h2 className="text-sm font-semibold">Location</h2>
+          <p className="text-xs text-muted-foreground">
+            Used for regional features like holiday predictions
+          </p>
+        </div>
+      </div>
+
+      <Select
+        value={profile?.country || "US"}
+        onValueChange={handleSelect}
+        disabled={updateProfile.isPending}
+      >
+        <SelectTrigger className="w-[240px]">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="US">🇺🇸 United States</SelectItem>
+          <SelectItem value="CA">🇨🇦 Canada</SelectItem>
+        </SelectContent>
+      </Select>
+
+      {updateProfile.error && (
+        <p className="mt-2 text-xs text-destructive">
+          {updateProfile.error.message}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/* ────────────────────────────────────────────────────────────────── */
+/*  4. Connected Accounts                                             */
 /* ────────────────────────────────────────────────────────────────── */
 
 function ConnectedAccountsSection() {

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
   Landmark,
@@ -75,26 +76,35 @@ export function AppSidebar() {
                       asChild
                       isActive={isActive}
                       tooltip={item.title}
-                      className="relative group"
+                      className="relative group transition-all duration-300"
                     >
-                      <Link href={item.href}>
+                      <Link href={item.href} className="flex items-center gap-2 w-full">
                         {isActive && (
                           <motion.div
                             layoutId="sidebar-active"
-                            className="absolute inset-0 z-0 bg-muted/60 rounded-md"
+                            className="absolute inset-0 z-0 bg-muted/80 backdrop-blur-sm rounded-md shadow-inner"
                             transition={{
                               type: "spring",
-                              stiffness: 300,
+                              stiffness: 400,
                               damping: 30,
                             }}
                           />
                         )}
-                        <item.icon className="relative z-10" />
-                        <span className="relative z-10">{item.title}</span>
+                        <item.icon className={cn(
+                          "relative z-10 transition-colors duration-300",
+                          isActive ? "text-positive" : "text-muted-foreground group-hover:text-foreground"
+                        )} />
+                        <span className={cn(
+                          "relative z-10 transition-colors duration-300",
+                          isActive ? "font-medium text-foreground" : "text-muted-foreground group-hover:text-foreground"
+                        )}>{item.title}</span>
                         {isActive && (
                           <motion.div
                             layoutId="sidebar-indicator"
-                            className="absolute left-0 top-1.5 bottom-1.5 w-0.5 bg-positive rounded-full"
+                            className="absolute left-0 top-2 bottom-2 w-1 bg-positive rounded-r-full shadow-[0_0_8px_rgba(139,154,107,0.6)]"
+                            initial={{ scaleY: 0 }}
+                            animate={{ scaleY: 1 }}
+                            transition={{ duration: 0.3 }}
                           />
                         )}
                       </Link>

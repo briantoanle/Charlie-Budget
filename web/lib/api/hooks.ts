@@ -117,6 +117,19 @@ export interface CategoryBreakdownItem {
   percentage: number;
 }
 
+export interface SavingsGoalResponse {
+  id: string;
+  name: string;
+  target_amount: number;
+  current_amount: number;
+  currency: string;
+  target_date: string | null;
+  color: string | null;
+  emoji: string | null;
+  archived: boolean;
+  created_at: string;
+}
+
 /* ────────────────────────────────────────────────────────────────── */
 /*  Query Hooks                                                       */
 /* ────────────────────────────────────────────────────────────────── */
@@ -210,6 +223,16 @@ export function useCategoryBreakdown(params: {
   });
 }
 
+export function useSavingsGoals(includeArchived = false) {
+  return useQuery({
+    queryKey: ["savings-goals", { includeArchived }],
+    queryFn: () =>
+      apiFetch<{ goals: SavingsGoalResponse[] }>(
+        `/api/savings-goals${includeArchived ? "?include_archived=true" : ""}`
+      ).then((r) => r.goals),
+  });
+}
+
 /* ────────────────────────────────────────────────────────────────── */
 /*  Mutation Hooks                                                    */
 /* ────────────────────────────────────────────────────────────────── */
@@ -247,6 +270,92 @@ export function useDeleteCategory() {
     mutationFn: (id: string) =>
       apiMutate<void>(`/api/categories/${id}`, "DELETE"),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["categories"] }),
+  });
+}
+
+// ── Transactions ────────────────────────────────────────────────────
+
+export function useCreateTransaction() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: {
+      account_id: string;
+      txn_date: string;
+      amount: number;
+      merchant?: string;
+      note?: string;
+      category_id?: string;
+      currency?: string;
+    }) => apiMutate<TransactionResponse>("/api/transactions", "POST", data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["transactions"] });
+      qc.invalidateQueries({ queryKey: ["reports"] });
+    },
+  });
+}
+
+export function useUpdateTransaction() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      ...data
+    }: {
+      id: string;
+      category_id?: string;
+      merchant?: string;
+      note?: string;
+    }) => apiMutate<TransactionResponse>(`/api/transactions/${id}`, "PATCH", data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["transactions"] });
+      qc.invalidateQueries({ queryKey: ["reports"] });
+    },
+  });
+}
+
+// ── Savings Goals ───────────────────────────────────────────────────
+
+export function useCreateSavingsGoal() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: {
+      name: string;
+      target_amount: number;
+      current_amount?: number;
+      target_date?: string;
+      color?: string;
+      emoji?: string;
+    }) => apiMutate<{ goal: SavingsGoalResponse }>("/api/savings-goals", "POST", data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["savings-goals"] }),
+  });
+}
+
+export function useUpdateSavingsGoal() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      ...data
+    }: {
+      id: string;
+      name?: string;
+      target_amount?: number;
+      current_amount?: number;
+      target_date?: string;
+      color?: string;
+      emoji?: string;
+      archived?: boolean;
+    }) => apiMutate<{ goal: SavingsGoalResponse }>(`/api/savings-goals/${id}`, "PATCH", data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["savings-goals"] }),
+  });
+}
+
+export function useDeleteSavingsGoal() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiMutate<void>(`/api/savings-goals/${id}`, "DELETE"),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["savings-goals"] }),
   });
 }
 
@@ -334,6 +443,7 @@ export interface ProfileResponse {
   id: string;
   display_name: string;
   base_currency: string;
+  country: string;
   created_at: string;
 }
 
@@ -350,7 +460,7 @@ export function useProfile() {
 export function useUpdateProfile() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: { display_name: string }) =>
+    mutationFn: (data: { display_name?: string; country?: string }) =>
       apiMutate<ProfileResponse>("/api/settings/profile", "PATCH", data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["profile"] }),
   });

@@ -1,12 +1,13 @@
 "use client";
 
-import { motion, AnimatePresence, useSpring, useMotionValue, useTransform } from "motion/react";
+import { motion, AnimatePresence, useSpring, useMotionValue, useReducedMotion } from "motion/react";
 import { useEffect, useRef, type ReactNode } from "react";
 
-/* ─── Spring config ──────────────────────────────────────────────── */
+/* ─── Spring config (tuned for snappy feel — 150-250ms settle) ──── */
 
-const snappy = { type: "spring" as const, stiffness: 300, damping: 30 };
-const gentle = { type: "spring" as const, stiffness: 200, damping: 25 };
+const snappy = { type: "spring" as const, stiffness: 500, damping: 35 };
+const gentle = { type: "spring" as const, stiffness: 350, damping: 32 };
+const instant = { duration: 0 };
 
 /* ─── FadeIn ─────────────────────────────────────────────────────── */
 
@@ -19,11 +20,12 @@ export function FadeIn({
   delay?: number;
   className?: string;
 }) {
+  const reduced = useReducedMotion();
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
+      initial={reduced ? false : { opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ ...gentle, delay }}
+      transition={reduced ? instant : { ...gentle, delay }}
       className={className}
     >
       {children}
@@ -36,7 +38,7 @@ export function FadeIn({
 export function StaggerList({
   children,
   className,
-  stagger = 0.06,
+  stagger = 0.03,
 }: {
   children: ReactNode;
   className?: string;
@@ -64,11 +66,12 @@ export function StaggerItem({
   children: ReactNode;
   className?: string;
 }) {
+  const reduced = useReducedMotion();
   return (
     <motion.div
       variants={{
-        hidden: { opacity: 0, y: 8 },
-        visible: { opacity: 1, y: 0, transition: gentle },
+        hidden: reduced ? { opacity: 1 } : { opacity: 0, y: 6 },
+        visible: { opacity: 1, y: 0, transition: reduced ? instant : gentle },
       }}
       className={className}
     >
@@ -91,12 +94,13 @@ export function SlideIn({
   const axis = direction === "left" || direction === "right" ? "x" : "y";
   const sign = direction === "right" || direction === "down" ? 1 : -1;
 
+  const reduced = useReducedMotion();
   return (
     <motion.div
-      initial={{ opacity: 0, [axis]: sign * 16 }}
+      initial={reduced ? false : { opacity: 0, [axis]: sign * 10 }}
       animate={{ opacity: 1, [axis]: 0 }}
-      exit={{ opacity: 0, [axis]: sign * 16 }}
-      transition={snappy}
+      exit={reduced ? { opacity: 0 } : { opacity: 0, [axis]: sign * 10 }}
+      transition={reduced ? instant : snappy}
       className={className}
     >
       {children}
@@ -167,11 +171,12 @@ export function PageTransition({
   children: ReactNode;
   className?: string;
 }) {
+  const reduced = useReducedMotion();
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8 }}
+      initial={reduced ? false : { opacity: 0, y: 4 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
+      transition={reduced ? instant : { duration: 0.18, ease: [0.25, 0.1, 0.25, 1] }}
       className={className}
     >
       {children}
@@ -188,11 +193,12 @@ export function CardHover({
   children: ReactNode;
   className?: string;
 }) {
+  const reduced = useReducedMotion();
   return (
     <motion.div
-      whileHover={{
+      whileHover={reduced ? undefined : {
         y: -2,
-        transition: { duration: 0.2 },
+        transition: { duration: 0.15 },
       }}
       className={className}
     >
@@ -217,7 +223,7 @@ export function AnimatedProgressBar({
       <motion.div
         initial={{ width: 0 }}
         animate={{ width: `${Math.min(100, percent)}%` }}
-        transition={{ ...gentle, delay: 0.2 }}
+        transition={{ ...gentle, delay: 0.1 }}
         className={barClassName}
       />
     </div>
