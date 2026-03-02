@@ -27,6 +27,14 @@ import {
   Check,
   X,
 } from "lucide-react";
+import {
+  PageTransition,
+  FadeIn,
+  SlideIn,
+  StaggerList,
+  StaggerItem,
+  AnimatePresence,
+} from "@/components/ui/motion-primitives";
 
 export default function CategoriesPage() {
   const [showArchived, setShowArchived] = useState(false);
@@ -177,7 +185,11 @@ export default function CategoriesPage() {
         </Badge>
       </div>
       {items.length > 0 ? (
-        <div className="space-y-1">{items.map(renderCategory)}</div>
+        <StaggerList className="space-y-1">
+          {items.map((cat) => (
+            <StaggerItem key={cat.id}>{renderCategory(cat)}</StaggerItem>
+          ))}
+        </StaggerList>
       ) : (
         <p className="rounded-lg border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
           No {kind} categories yet
@@ -187,7 +199,9 @@ export default function CategoriesPage() {
   );
 
   return (
+    <PageTransition>
     <div className="space-y-6">
+      <FadeIn>
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Categories</h1>
@@ -209,9 +223,12 @@ export default function CategoriesPage() {
           </Button>
         </div>
       </div>
+      </FadeIn>
 
       {/* Create form */}
+      <AnimatePresence>
       {creating && (
+        <SlideIn direction="down">
         <div className="flex items-end gap-3 rounded-lg border border-border bg-card p-4">
           <div className="flex-1 space-y-1">
             <label className="text-xs text-muted-foreground">Name</label>
@@ -243,7 +260,9 @@ export default function CategoriesPage() {
             Cancel
           </Button>
         </div>
+        </SlideIn>
       )}
+      </AnimatePresence>
 
       {/* Error display */}
       {(createMutation.error || updateMutation.error || deleteMutation.error) && (
@@ -255,17 +274,20 @@ export default function CategoriesPage() {
       {isLoading ? (
         <div className="space-y-4">
           {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} className="h-12 rounded-lg" />
+            <Skeleton key={i} className="h-12 rounded-lg skeleton-shimmer" />
           ))}
         </div>
       ) : (
+        <FadeIn delay={0.15}>
         <div className="space-y-8">
           {renderSection("Expenses", expenseCategories, "expense")}
           {renderSection("Income", incomeCategories, "income")}
           {transferCategories.length > 0 &&
             renderSection("Transfers", transferCategories, "transfer")}
         </div>
+        </FadeIn>
       )}
     </div>
+    </PageTransition>
   );
 }

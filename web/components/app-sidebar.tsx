@@ -27,6 +27,7 @@ import {
   SidebarSeparator,
 } from "@/components/ui/sidebar";
 import { signOutAction } from "@/lib/actions/auth";
+import { motion } from "motion/react";
 
 const navItems = [
   { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -48,10 +49,10 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link href="/dashboard">
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-positive text-primary-foreground">
+                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-positive text-primary-foreground shadow-[0_0_12px_rgba(139,154,107,0.4)]">
                   <span className="text-sm font-bold">C</span>
                 </div>
-                <div className="flex flex-col gap-0.5 leading-none">
+                <div className="flex flex-col gap-0.5 leading-none px-1">
                   <span className="font-semibold tracking-tight">Charlie</span>
                   <span className="text-xs text-muted-foreground">Budget</span>
                 </div>
@@ -66,20 +67,41 @@ export function AppSidebar() {
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navItems.map((item) => (
-                <SidebarMenuItem key={item.href}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={pathname.startsWith(item.href)}
-                    tooltip={item.title}
-                  >
-                    <Link href={item.href}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {navItems.map((item) => {
+                const isActive = pathname.startsWith(item.href);
+                return (
+                  <SidebarMenuItem key={item.href}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive}
+                      tooltip={item.title}
+                      className="relative group"
+                    >
+                      <Link href={item.href}>
+                        {isActive && (
+                          <motion.div
+                            layoutId="sidebar-active"
+                            className="absolute inset-0 z-0 bg-muted/60 rounded-md"
+                            transition={{
+                              type: "spring",
+                              stiffness: 300,
+                              damping: 30,
+                            }}
+                          />
+                        )}
+                        <item.icon className="relative z-10" />
+                        <span className="relative z-10">{item.title}</span>
+                        {isActive && (
+                          <motion.div
+                            layoutId="sidebar-indicator"
+                            className="absolute left-0 top-1.5 bottom-1.5 w-0.5 bg-positive rounded-full"
+                          />
+                        )}
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -89,10 +111,26 @@ export function AppSidebar() {
         <SidebarSeparator />
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip="Settings">
+            <SidebarMenuButton
+              asChild
+              tooltip="Settings"
+              isActive={pathname === "/settings"}
+              className="relative"
+            >
               <Link href="/settings">
-                <Settings />
-                <span>Settings</span>
+                {pathname === "/settings" && (
+                  <motion.div
+                    layoutId="sidebar-active"
+                    className="absolute inset-0 z-0 bg-muted/60 rounded-md"
+                    transition={{
+                      type: "spring",
+                      stiffness: 300,
+                      damping: 30,
+                    }}
+                  />
+                )}
+                <Settings className="relative z-10" />
+                <span className="relative z-10">Settings</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -110,3 +148,4 @@ export function AppSidebar() {
     </Sidebar>
   );
 }
+

@@ -10,7 +10,15 @@ export class ProfileService extends BaseService {
       .single();
 
     if (error || !data) {
-      throw new Error("Profile not found");
+      if (error?.code !== 'PGRST116') {
+        throw new Error("Failed to fetch profile");
+      }
+      return {
+        id: this.user.id,
+        display_name: "",
+        base_currency: "USD",
+        created_at: new Date().toISOString()
+      };
     }
 
     return data as ProfileResponse;

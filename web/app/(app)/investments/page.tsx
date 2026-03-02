@@ -46,63 +46,82 @@ import {
   DollarSign,
   Loader2,
 } from "lucide-react";
+import {
+  PageTransition,
+  FadeIn,
+  StaggerList,
+  StaggerItem,
+  AnimatedNumber,
+  SlideIn,
+  motion,
+  AnimatePresence,
+} from "@/components/ui/motion-primitives";
 
 /* ────────────────────────────────────────────────────────────────── */
 /*  Page                                                              */
 /* ────────────────────────────────────────────────────────────────── */
 
 export default function InvestmentsPage() {
-  const { data: accounts, isLoading: accountsLoading } = useInvestmentAccounts();
+  const { data: accounts, isLoading: accountsLoading } =
+    useInvestmentAccounts();
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Investments</h1>
-        <p className="text-sm text-muted-foreground">
-          Track your portfolio holdings, trades, and dividends
-        </p>
+    <PageTransition>
+      <div className="space-y-6">
+        <FadeIn>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Investments
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Track your portfolio holdings, trades, and dividends
+          </p>
+        </FadeIn>
+
+        {accountsLoading ? (
+          <Skeleton className="h-64 rounded-lg skeleton-shimmer" />
+        ) : !accounts || accounts.length === 0 ? (
+          <FadeIn delay={0.15}>
+            <EmptyPortfolio />
+          </FadeIn>
+        ) : (
+          <FadeIn delay={0.1}>
+            <Tabs defaultValue="holdings" className="space-y-4">
+              <TabsList className="grid w-full max-w-md grid-cols-4">
+                <TabsTrigger value="holdings" className="gap-1.5">
+                  <BarChart3 className="h-3.5 w-3.5" />
+                  Holdings
+                </TabsTrigger>
+                <TabsTrigger value="trades" className="gap-1.5">
+                  <History className="h-3.5 w-3.5" />
+                  Trades
+                </TabsTrigger>
+                <TabsTrigger value="dividends" className="gap-1.5">
+                  <DollarSign className="h-3.5 w-3.5" />
+                  Dividends
+                </TabsTrigger>
+                <TabsTrigger value="drip" className="gap-1.5">
+                  <Calculator className="h-3.5 w-3.5" />
+                  DRIP
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="holdings">
+                <HoldingsTab />
+              </TabsContent>
+              <TabsContent value="trades">
+                <TradesTab accounts={accounts} />
+              </TabsContent>
+              <TabsContent value="dividends">
+                <DividendsTab accounts={accounts} />
+              </TabsContent>
+              <TabsContent value="drip">
+                <DripCalculator />
+              </TabsContent>
+            </Tabs>
+          </FadeIn>
+        )}
       </div>
-
-      {accountsLoading ? (
-        <Skeleton className="h-64 rounded-lg" />
-      ) : !accounts || accounts.length === 0 ? (
-        <EmptyPortfolio />
-      ) : (
-        <Tabs defaultValue="holdings" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4 max-w-md">
-            <TabsTrigger value="holdings" className="gap-1.5">
-              <BarChart3 className="h-3.5 w-3.5" />
-              Holdings
-            </TabsTrigger>
-            <TabsTrigger value="trades" className="gap-1.5">
-              <History className="h-3.5 w-3.5" />
-              Trades
-            </TabsTrigger>
-            <TabsTrigger value="dividends" className="gap-1.5">
-              <DollarSign className="h-3.5 w-3.5" />
-              Dividends
-            </TabsTrigger>
-            <TabsTrigger value="drip" className="gap-1.5">
-              <Calculator className="h-3.5 w-3.5" />
-              DRIP
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="holdings">
-            <HoldingsTab />
-          </TabsContent>
-          <TabsContent value="trades">
-            <TradesTab accounts={accounts} />
-          </TabsContent>
-          <TabsContent value="dividends">
-            <DividendsTab accounts={accounts} />
-          </TabsContent>
-          <TabsContent value="drip">
-            <DripCalculator />
-          </TabsContent>
-        </Tabs>
-      )}
-    </div>
+    </PageTransition>
   );
 }
 
@@ -113,8 +132,8 @@ export default function InvestmentsPage() {
 function EmptyPortfolio() {
   return (
     <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border p-12 text-center">
-      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-        <BarChart3 className="h-6 w-6 text-muted-foreground" />
+      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted/60">
+        <BarChart3 className="h-7 w-7 text-muted-foreground" />
       </div>
       <h3 className="mt-4 text-sm font-semibold">No investment accounts</h3>
       <p className="mt-1 max-w-sm text-sm text-muted-foreground">
@@ -148,7 +167,7 @@ function PnlBadge({ value, pct }: { value: number; pct: number }) {
   return (
     <span
       className={`inline-flex items-center gap-0.5 font-mono text-xs ${
-        positive ? "text-green-400" : "text-red-400"
+        positive ? "text-positive glow-positive" : "text-destructive glow-destructive"
       }`}
     >
       {positive ? (
@@ -168,14 +187,15 @@ function PnlBadge({ value, pct }: { value: number; pct: number }) {
 function HoldingsTab() {
   const { data: holdings, isLoading } = useHoldings();
 
-  if (isLoading) return <Skeleton className="h-48 rounded-lg" />;
+  if (isLoading) return <Skeleton className="h-48 rounded-lg skeleton-shimmer" />;
 
   const data = holdings ?? [];
 
   const totalMarketValue = data.reduce((s, h) => s + h.market_value, 0);
   const totalCostBasis = data.reduce((s, h) => s + h.quantity * h.avg_cost, 0);
   const totalPnl = totalMarketValue - totalCostBasis;
-  const totalPnlPct = totalCostBasis > 0 ? (totalPnl / totalCostBasis) * 100 : 0;
+  const totalPnlPct =
+    totalCostBasis > 0 ? (totalPnl / totalCostBasis) * 100 : 0;
 
   if (data.length === 0) {
     return (
@@ -190,71 +210,89 @@ function HoldingsTab() {
   return (
     <div className="space-y-4">
       {/* Summary cards */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="rounded-lg border border-border bg-card p-4">
-          <p className="text-xs text-muted-foreground">Market Value</p>
-          <p className="mt-1 text-xl font-semibold font-mono">
-            {fmtCurrency(totalMarketValue)}
-          </p>
-        </div>
-        <div className="rounded-lg border border-border bg-card p-4">
-          <p className="text-xs text-muted-foreground">Cost Basis</p>
-          <p className="mt-1 text-xl font-semibold font-mono">
-            {fmtCurrency(totalCostBasis)}
-          </p>
-        </div>
-        <div className="rounded-lg border border-border bg-card p-4">
-          <p className="text-xs text-muted-foreground">Unrealized P&L</p>
-          <div className="mt-1 flex items-center gap-2">
-            {totalPnl >= 0 ? (
-              <TrendingUp className="h-4 w-4 text-green-400" />
-            ) : (
-              <TrendingDown className="h-4 w-4 text-red-400" />
-            )}
-            <PnlBadge value={totalPnl} pct={totalPnlPct} />
+      <StaggerList className="grid grid-cols-3 gap-4">
+        <StaggerItem>
+          <div className="card-hover rounded-lg border border-border bg-card p-4">
+            <p className="text-xs text-muted-foreground">Market Value</p>
+            <AnimatedNumber
+              value={totalMarketValue}
+              format="currency"
+              className="mt-1 block text-xl font-semibold font-mono"
+            />
           </div>
-        </div>
-      </div>
+        </StaggerItem>
+        <StaggerItem>
+          <div className="card-hover rounded-lg border border-border bg-card p-4">
+            <p className="text-xs text-muted-foreground">Cost Basis</p>
+            <AnimatedNumber
+              value={totalCostBasis}
+              format="currency"
+              className="mt-1 block text-xl font-semibold font-mono"
+            />
+          </div>
+        </StaggerItem>
+        <StaggerItem>
+          <div className="card-hover rounded-lg border border-border bg-card p-4">
+            <p className="text-xs text-muted-foreground">Unrealized P&L</p>
+            <div className="mt-1 flex items-center gap-2">
+              {totalPnl >= 0 ? (
+                <TrendingUp className="h-4 w-4 text-positive" />
+              ) : (
+                <TrendingDown className="h-4 w-4 text-destructive" />
+              )}
+              <PnlBadge value={totalPnl} pct={totalPnlPct} />
+            </div>
+          </div>
+        </StaggerItem>
+      </StaggerList>
 
       {/* Holdings table */}
-      <div className="rounded-lg border border-border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Symbol</TableHead>
-              <TableHead className="text-right">Shares</TableHead>
-              <TableHead className="text-right">Avg Cost</TableHead>
-              <TableHead className="text-right">Price</TableHead>
-              <TableHead className="text-right">Market Value</TableHead>
-              <TableHead className="text-right">P&L</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {data.map((h: HoldingResponse) => (
-              <TableRow key={h.id}>
-                <TableCell className="font-mono font-medium">
-                  {h.ticker}
-                </TableCell>
-                <TableCell className="text-right font-mono">
-                  {fmt(h.quantity, 4)}
-                </TableCell>
-                <TableCell className="text-right font-mono">
-                  {fmtCurrency(h.avg_cost)}
-                </TableCell>
-                <TableCell className="text-right font-mono">
-                  {fmtCurrency(h.current_price)}
-                </TableCell>
-                <TableCell className="text-right font-mono">
-                  {fmtCurrency(h.market_value)}
-                </TableCell>
-                <TableCell className="text-right">
-                  <PnlBadge value={h.unrealized_pnl} pct={h.unrealized_pnl_pct} />
-                </TableCell>
+      <FadeIn delay={0.2}>
+        <div className="rounded-lg border border-border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Symbol</TableHead>
+                <TableHead className="text-right">Shares</TableHead>
+                <TableHead className="text-right">Avg Cost</TableHead>
+                <TableHead className="text-right">Price</TableHead>
+                <TableHead className="text-right">Market Value</TableHead>
+                <TableHead className="text-right">P&L</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+            </TableHeader>
+            <TableBody>
+              {data.map((h: HoldingResponse, i: number) => (
+                <motion.tr
+                  key={h.id}
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.3 + i * 0.04, duration: 0.3 }}
+                  className="border-b border-border transition-colors hover:bg-muted/50"
+                >
+                  <TableCell className="font-mono font-medium">
+                    {h.ticker}
+                  </TableCell>
+                  <TableCell className="text-right font-mono">
+                    {fmt(h.quantity, 4)}
+                  </TableCell>
+                  <TableCell className="text-right font-mono">
+                    {fmtCurrency(h.avg_cost)}
+                  </TableCell>
+                  <TableCell className="text-right font-mono">
+                    {fmtCurrency(h.current_price)}
+                  </TableCell>
+                  <TableCell className="text-right font-mono">
+                    {fmtCurrency(h.market_value)}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <PnlBadge value={h.unrealized_pnl} pct={h.unrealized_pnl_pct} />
+                  </TableCell>
+                </motion.tr>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </FadeIn>
     </div>
   );
 }
@@ -313,129 +351,138 @@ function TradesTab({ accounts }: { accounts: AccountItem[] }) {
         </Button>
       </div>
 
-      {showForm && (
-        <div className="rounded-lg border border-border bg-card p-4 space-y-3">
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            <div>
-              <Label className="text-xs">Account</Label>
-              <Select
-                value={form.account_id}
-                onValueChange={(v) => setForm((f) => ({ ...f, account_id: v }))}
-              >
-                <SelectTrigger className="mt-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {accounts.map((a) => (
-                    <SelectItem key={a.id} value={a.id}>
-                      {a.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label className="text-xs">Ticker</Label>
-              <Input
-                className="mt-1 uppercase font-mono"
-                placeholder="AAPL"
-                value={form.ticker}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, ticker: e.target.value }))
-                }
-              />
-            </div>
-            <div>
-              <Label className="text-xs">Side</Label>
-              <Select
-                value={form.side}
-                onValueChange={(v) =>
-                  setForm((f) => ({ ...f, side: v as "buy" | "sell" }))
-                }
-              >
-                <SelectTrigger className="mt-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="buy">Buy</SelectItem>
-                  <SelectItem value="sell">Sell</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label className="text-xs">Quantity</Label>
-              <Input
-                className="mt-1 font-mono"
-                type="number"
-                step="any"
-                placeholder="100"
-                value={form.quantity}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, quantity: e.target.value }))
-                }
-              />
-            </div>
-            <div>
-              <Label className="text-xs">Price</Label>
-              <Input
-                className="mt-1 font-mono"
-                type="number"
-                step="any"
-                placeholder="150.00"
-                value={form.price}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, price: e.target.value }))
-                }
-              />
-            </div>
-            <div>
-              <Label className="text-xs">Date</Label>
-              <Input
-                className="mt-1 font-mono"
-                type="date"
-                value={form.trade_date}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, trade_date: e.target.value }))
-                }
-              />
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              onClick={handleSubmit}
-              disabled={createTrade.isPending}
-            >
-              {createTrade.isPending ? (
-                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <Plus className="mr-1.5 h-3.5 w-3.5" />
+      <AnimatePresence>
+        {showForm && (
+          <SlideIn direction="down">
+            <div className="rounded-lg border border-border bg-card p-4 space-y-3">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                <div>
+                  <Label className="text-xs">Account</Label>
+                  <Select
+                    value={form.account_id}
+                    onValueChange={(v) =>
+                      setForm((f) => ({ ...f, account_id: v }))
+                    }
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {accounts.map((a) => (
+                        <SelectItem key={a.id} value={a.id}>
+                          {a.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-xs">Ticker</Label>
+                  <Input
+                    className="mt-1 uppercase font-mono"
+                    placeholder="AAPL"
+                    value={form.ticker}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, ticker: e.target.value }))
+                    }
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Side</Label>
+                  <Select
+                    value={form.side}
+                    onValueChange={(v) =>
+                      setForm((f) => ({ ...f, side: v as "buy" | "sell" }))
+                    }
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="buy">Buy</SelectItem>
+                      <SelectItem value="sell">Sell</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-xs">Quantity</Label>
+                  <Input
+                    className="mt-1 font-mono"
+                    type="number"
+                    step="any"
+                    placeholder="100"
+                    value={form.quantity}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, quantity: e.target.value }))
+                    }
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Price</Label>
+                  <Input
+                    className="mt-1 font-mono"
+                    type="number"
+                    step="any"
+                    placeholder="150.00"
+                    value={form.price}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, price: e.target.value }))
+                    }
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Date</Label>
+                  <Input
+                    className="mt-1 font-mono"
+                    type="date"
+                    value={form.trade_date}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, trade_date: e.target.value }))
+                    }
+                  />
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  onClick={handleSubmit}
+                  disabled={createTrade.isPending}
+                >
+                  {createTrade.isPending ? (
+                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Plus className="mr-1.5 h-3.5 w-3.5" />
+                  )}
+                  Submit
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setShowForm(false)}
+                >
+                  Cancel
+                </Button>
+                {form.quantity && form.price && (
+                  <span className="ml-auto text-xs text-muted-foreground font-mono">
+                    Total:{" "}
+                    {fmtCurrency(
+                      parseFloat(form.quantity) * parseFloat(form.price)
+                    )}
+                  </span>
+                )}
+              </div>
+              {createTrade.error && (
+                <p className="text-xs text-destructive">
+                  {createTrade.error.message}
+                </p>
               )}
-              Submit
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => setShowForm(false)}
-            >
-              Cancel
-            </Button>
-            {form.quantity && form.price && (
-              <span className="ml-auto text-xs text-muted-foreground font-mono">
-                Total: {fmtCurrency(parseFloat(form.quantity) * parseFloat(form.price))}
-              </span>
-            )}
-          </div>
-          {createTrade.error && (
-            <p className="text-xs text-destructive">
-              {createTrade.error.message}
-            </p>
-          )}
-        </div>
-      )}
+            </div>
+          </SlideIn>
+        )}
+      </AnimatePresence>
 
       {isLoading ? (
-        <Skeleton className="h-36 rounded-lg" />
+        <Skeleton className="h-36 rounded-lg skeleton-shimmer" />
       ) : (trades ?? []).length === 0 ? (
         <div className="rounded-lg border border-border bg-card p-8 text-center">
           <p className="text-sm text-muted-foreground">
@@ -443,49 +490,59 @@ function TradesTab({ accounts }: { accounts: AccountItem[] }) {
           </p>
         </div>
       ) : (
-        <div className="rounded-lg border border-border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Symbol</TableHead>
-                <TableHead>Side</TableHead>
-                <TableHead className="text-right">Qty</TableHead>
-                <TableHead className="text-right">Price</TableHead>
-                <TableHead className="text-right">Total</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {(trades ?? []).map((t: TradeResponse) => (
-                <TableRow key={t.id}>
-                  <TableCell className="font-mono text-xs">
-                    {t.trade_date}
-                  </TableCell>
-                  <TableCell className="font-mono font-medium">
-                    {t.ticker}
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={t.side === "buy" ? "default" : "destructive"}
-                      className="text-[10px] px-1.5 py-0 uppercase"
-                    >
-                      {t.side}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right font-mono">
-                    {fmt(t.quantity, 4)}
-                  </TableCell>
-                  <TableCell className="text-right font-mono">
-                    {fmtCurrency(t.price)}
-                  </TableCell>
-                  <TableCell className="text-right font-mono">
-                    {fmtCurrency(t.total)}
-                  </TableCell>
+        <FadeIn delay={0.1}>
+          <div className="rounded-lg border border-border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Symbol</TableHead>
+                  <TableHead>Side</TableHead>
+                  <TableHead className="text-right">Qty</TableHead>
+                  <TableHead className="text-right">Price</TableHead>
+                  <TableHead className="text-right">Total</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+              <TableBody>
+                {(trades ?? []).map((t: TradeResponse, i: number) => (
+                  <motion.tr
+                    key={t.id}
+                    initial={{ opacity: 0, x: -6 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.03, duration: 0.25 }}
+                    className="border-b border-border transition-colors hover:bg-muted/50"
+                  >
+                    <TableCell className="font-mono text-xs">
+                      {t.trade_date}
+                    </TableCell>
+                    <TableCell className="font-mono font-medium">
+                      {t.ticker}
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={
+                          t.side === "buy" ? "default" : "destructive"
+                        }
+                        className="text-[10px] px-1.5 py-0 uppercase"
+                      >
+                        {t.side}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right font-mono">
+                      {fmt(t.quantity, 4)}
+                    </TableCell>
+                    <TableCell className="text-right font-mono">
+                      {fmtCurrency(t.price)}
+                    </TableCell>
+                    <TableCell className="text-right font-mono">
+                      {fmtCurrency(t.total)}
+                    </TableCell>
+                  </motion.tr>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </FadeIn>
       )}
     </div>
   );
@@ -526,7 +583,10 @@ function DividendsTab({ accounts }: { accounts: AccountItem[] }) {
     );
   };
 
-  const totalDividends = (dividends ?? []).reduce((s, d) => s + d.amount, 0);
+  const totalDividends = (dividends ?? []).reduce(
+    (s, d) => s + d.amount,
+    0
+  );
 
   return (
     <div className="space-y-4">
@@ -535,7 +595,10 @@ function DividendsTab({ accounts }: { accounts: AccountItem[] }) {
           <h2 className="text-sm font-semibold">Dividend History</h2>
           {totalDividends > 0 && (
             <span className="text-xs text-muted-foreground font-mono">
-              Total: {fmtCurrency(totalDividends)}
+              Total:{" "}
+              <span className="text-positive glow-positive">
+                {fmtCurrency(totalDividends)}
+              </span>
             </span>
           )}
         </div>
@@ -545,107 +608,113 @@ function DividendsTab({ accounts }: { accounts: AccountItem[] }) {
         </Button>
       </div>
 
-      {showForm && (
-        <div className="rounded-lg border border-border bg-card p-4 space-y-3">
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            <div>
-              <Label className="text-xs">Account</Label>
-              <Select
-                value={form.account_id}
-                onValueChange={(v) => setForm((f) => ({ ...f, account_id: v }))}
-              >
-                <SelectTrigger className="mt-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {accounts.map((a) => (
-                    <SelectItem key={a.id} value={a.id}>
-                      {a.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label className="text-xs">Ticker</Label>
-              <Input
-                className="mt-1 uppercase font-mono"
-                placeholder="AAPL"
-                value={form.ticker}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, ticker: e.target.value }))
-                }
-              />
-            </div>
-            <div>
-              <Label className="text-xs">Total Amount</Label>
-              <Input
-                className="mt-1 font-mono"
-                type="number"
-                step="any"
-                placeholder="45.00"
-                value={form.amount}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, amount: e.target.value }))
-                }
-              />
-            </div>
-            <div>
-              <Label className="text-xs">Per Share (optional)</Label>
-              <Input
-                className="mt-1 font-mono"
-                type="number"
-                step="any"
-                placeholder="0.24"
-                value={form.per_share}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, per_share: e.target.value }))
-                }
-              />
-            </div>
-            <div>
-              <Label className="text-xs">Pay Date</Label>
-              <Input
-                className="mt-1 font-mono"
-                type="date"
-                value={form.pay_date}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, pay_date: e.target.value }))
-                }
-              />
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              onClick={handleSubmit}
-              disabled={createDividend.isPending}
-            >
-              {createDividend.isPending ? (
-                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <Plus className="mr-1.5 h-3.5 w-3.5" />
+      <AnimatePresence>
+        {showForm && (
+          <SlideIn direction="down">
+            <div className="rounded-lg border border-border bg-card p-4 space-y-3">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                <div>
+                  <Label className="text-xs">Account</Label>
+                  <Select
+                    value={form.account_id}
+                    onValueChange={(v) =>
+                      setForm((f) => ({ ...f, account_id: v }))
+                    }
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {accounts.map((a) => (
+                        <SelectItem key={a.id} value={a.id}>
+                          {a.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-xs">Ticker</Label>
+                  <Input
+                    className="mt-1 uppercase font-mono"
+                    placeholder="AAPL"
+                    value={form.ticker}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, ticker: e.target.value }))
+                    }
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Total Amount</Label>
+                  <Input
+                    className="mt-1 font-mono"
+                    type="number"
+                    step="any"
+                    placeholder="45.00"
+                    value={form.amount}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, amount: e.target.value }))
+                    }
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Per Share (optional)</Label>
+                  <Input
+                    className="mt-1 font-mono"
+                    type="number"
+                    step="any"
+                    placeholder="0.24"
+                    value={form.per_share}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, per_share: e.target.value }))
+                    }
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Pay Date</Label>
+                  <Input
+                    className="mt-1 font-mono"
+                    type="date"
+                    value={form.pay_date}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, pay_date: e.target.value }))
+                    }
+                  />
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  onClick={handleSubmit}
+                  disabled={createDividend.isPending}
+                >
+                  {createDividend.isPending ? (
+                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Plus className="mr-1.5 h-3.5 w-3.5" />
+                  )}
+                  Submit
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setShowForm(false)}
+                >
+                  Cancel
+                </Button>
+              </div>
+              {createDividend.error && (
+                <p className="text-xs text-destructive">
+                  {createDividend.error.message}
+                </p>
               )}
-              Submit
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => setShowForm(false)}
-            >
-              Cancel
-            </Button>
-          </div>
-          {createDividend.error && (
-            <p className="text-xs text-destructive">
-              {createDividend.error.message}
-            </p>
-          )}
-        </div>
-      )}
+            </div>
+          </SlideIn>
+        )}
+      </AnimatePresence>
 
       {isLoading ? (
-        <Skeleton className="h-36 rounded-lg" />
+        <Skeleton className="h-36 rounded-lg skeleton-shimmer" />
       ) : (dividends ?? []).length === 0 ? (
         <div className="rounded-lg border border-border bg-card p-8 text-center">
           <p className="text-sm text-muted-foreground">
@@ -653,36 +722,44 @@ function DividendsTab({ accounts }: { accounts: AccountItem[] }) {
           </p>
         </div>
       ) : (
-        <div className="rounded-lg border border-border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Pay Date</TableHead>
-                <TableHead>Symbol</TableHead>
-                <TableHead className="text-right">Per Share</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {(dividends ?? []).map((d: DividendResponse) => (
-                <TableRow key={d.id}>
-                  <TableCell className="font-mono text-xs">
-                    {d.pay_date ?? "—"}
-                  </TableCell>
-                  <TableCell className="font-mono font-medium">
-                    {d.ticker}
-                  </TableCell>
-                  <TableCell className="text-right font-mono">
-                    {d.per_share ? fmtCurrency(d.per_share) : "—"}
-                  </TableCell>
-                  <TableCell className="text-right font-mono text-green-400">
-                    +{fmtCurrency(d.amount)}
-                  </TableCell>
+        <FadeIn delay={0.1}>
+          <div className="rounded-lg border border-border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Pay Date</TableHead>
+                  <TableHead>Symbol</TableHead>
+                  <TableHead className="text-right">Per Share</TableHead>
+                  <TableHead className="text-right">Amount</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+              <TableBody>
+                {(dividends ?? []).map((d: DividendResponse, i: number) => (
+                  <motion.tr
+                    key={d.id}
+                    initial={{ opacity: 0, x: -6 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.03, duration: 0.25 }}
+                    className="border-b border-border transition-colors hover:bg-muted/50"
+                  >
+                    <TableCell className="font-mono text-xs">
+                      {d.pay_date ?? "—"}
+                    </TableCell>
+                    <TableCell className="font-mono font-medium">
+                      {d.ticker}
+                    </TableCell>
+                    <TableCell className="text-right font-mono">
+                      {d.per_share ? fmtCurrency(d.per_share) : "—"}
+                    </TableCell>
+                    <TableCell className="text-right font-mono text-positive glow-positive">
+                      +{fmtCurrency(d.amount)}
+                    </TableCell>
+                  </motion.tr>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </FadeIn>
       )}
     </div>
   );
@@ -749,7 +826,7 @@ function DripCalculator() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-lg border border-border bg-card p-4">
+      <div className="card-hover rounded-lg border border-border bg-card p-4">
         <h2 className="text-sm font-semibold mb-3">DRIP Calculator</h2>
         <p className="text-xs text-muted-foreground mb-4">
           Project the growth of a dividend-reinvesting portfolio over time.
@@ -817,64 +894,86 @@ function DripCalculator() {
 
       {/* Summary */}
       {finalRow && (
-        <div className="grid grid-cols-3 gap-4">
-          <div className="rounded-lg border border-border bg-card p-4">
-            <p className="text-xs text-muted-foreground">Initial Investment</p>
-            <p className="mt-1 text-lg font-semibold font-mono">
-              {fmtCurrency(initValue)}
-            </p>
-          </div>
-          <div className="rounded-lg border border-border bg-card p-4">
-            <p className="text-xs text-muted-foreground">
-              Projected Final Value
-            </p>
-            <p className="mt-1 text-lg font-semibold font-mono text-green-400">
-              {fmtCurrency(finalRow.totalValue)}
-            </p>
-          </div>
-          <div className="rounded-lg border border-border bg-card p-4">
-            <p className="text-xs text-muted-foreground">Total Return</p>
-            <p className="mt-1 text-lg font-semibold font-mono text-green-400">
-              +{fmt(totalReturn, 1)}%
-            </p>
-          </div>
-        </div>
+        <StaggerList className="grid grid-cols-3 gap-4">
+          <StaggerItem>
+            <div className="card-hover rounded-lg border border-border bg-card p-4">
+              <p className="text-xs text-muted-foreground">
+                Initial Investment
+              </p>
+              <AnimatedNumber
+                value={initValue}
+                format="currency"
+                className="mt-1 block text-lg font-semibold font-mono"
+              />
+            </div>
+          </StaggerItem>
+          <StaggerItem>
+            <div className="card-hover rounded-lg border border-border bg-card p-4">
+              <p className="text-xs text-muted-foreground">
+                Projected Final Value
+              </p>
+              <AnimatedNumber
+                value={finalRow.totalValue}
+                format="currency"
+                className="mt-1 block text-lg font-semibold font-mono text-positive glow-positive"
+              />
+            </div>
+          </StaggerItem>
+          <StaggerItem>
+            <div className="card-hover rounded-lg border border-border bg-card p-4">
+              <p className="text-xs text-muted-foreground">Total Return</p>
+              <AnimatedNumber
+                value={totalReturn}
+                format="percent"
+                className="mt-1 block text-lg font-semibold font-mono text-positive glow-positive"
+              />
+            </div>
+          </StaggerItem>
+        </StaggerList>
       )}
 
       {/* Projection table */}
       {rows.length > 0 && (
-        <div className="rounded-lg border border-border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Year</TableHead>
-                <TableHead className="text-right">Shares</TableHead>
-                <TableHead className="text-right">Div Income</TableHead>
-                <TableHead className="text-right">Reinvested</TableHead>
-                <TableHead className="text-right">Total Value</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((r) => (
-                <TableRow key={r.year}>
-                  <TableCell className="font-mono">{r.year}</TableCell>
-                  <TableCell className="text-right font-mono">
-                    {fmt(r.shares, 2)}
-                  </TableCell>
-                  <TableCell className="text-right font-mono text-green-400">
-                    +{fmtCurrency(r.dividendIncome)}
-                  </TableCell>
-                  <TableCell className="text-right font-mono">
-                    {fmt(r.reinvestedShares, 4)}
-                  </TableCell>
-                  <TableCell className="text-right font-mono font-medium">
-                    {fmtCurrency(r.totalValue)}
-                  </TableCell>
+        <FadeIn delay={0.2}>
+          <div className="rounded-lg border border-border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Year</TableHead>
+                  <TableHead className="text-right">Shares</TableHead>
+                  <TableHead className="text-right">Div Income</TableHead>
+                  <TableHead className="text-right">Reinvested</TableHead>
+                  <TableHead className="text-right">Total Value</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+              <TableBody>
+                {rows.map((r, i) => (
+                  <motion.tr
+                    key={r.year}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.3 + i * 0.03 }}
+                    className="border-b border-border transition-colors hover:bg-muted/50"
+                  >
+                    <TableCell className="font-mono">{r.year}</TableCell>
+                    <TableCell className="text-right font-mono">
+                      {fmt(r.shares, 2)}
+                    </TableCell>
+                    <TableCell className="text-right font-mono text-positive">
+                      +{fmtCurrency(r.dividendIncome)}
+                    </TableCell>
+                    <TableCell className="text-right font-mono">
+                      {fmt(r.reinvestedShares, 4)}
+                    </TableCell>
+                    <TableCell className="text-right font-mono font-medium">
+                      {fmtCurrency(r.totalValue)}
+                    </TableCell>
+                  </motion.tr>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </FadeIn>
       )}
     </div>
   );

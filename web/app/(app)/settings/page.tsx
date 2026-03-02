@@ -4,6 +4,7 @@ import { AccountService } from "@/lib/api/services/account.service";
 import { redirect } from "next/navigation";
 import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
 import { SettingsClientComponents } from "./client-components";
+import { SettingsPageShell } from "./page-shell";
 
 export default async function SettingsPage() {
   const auth = await getAuth();
@@ -27,19 +28,12 @@ export default async function SettingsPage() {
   ]);
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
-        <p className="text-sm text-muted-foreground">
-          Manage your profile and preferences
-        </p>
-      </div>
-
-      <div className="max-w-2xl space-y-6">
+    <SettingsPageShell>
+      <div className="max-w-2xl">
         <HydrationBoundary state={dehydrate(queryClient)}>
           <SettingsClientComponents />
         </HydrationBoundary>
       </div>
-    </div>
+    </SettingsPageShell>
   );
 }

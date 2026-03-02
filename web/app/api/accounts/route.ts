@@ -21,6 +21,7 @@ export async function GET() {
     const accounts = await accountService.getAccounts();
     return json({ accounts });
   } catch (err: any) {
+    console.error("AccountService GET Error", err);
     return error(err.message, 500);
   }
 }

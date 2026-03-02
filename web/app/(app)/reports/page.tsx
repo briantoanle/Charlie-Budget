@@ -10,6 +10,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  PageTransition,
+  FadeIn,
+  StaggerList,
+  StaggerItem,
+  motion,
+} from "@/components/ui/motion-primitives";
 
 export default function ReportsPage() {
   const [months, setMonths] = useState(12);
@@ -44,13 +51,14 @@ export default function ReportsPage() {
   const apiNotReady = trendError || breakdownError;
 
   return (
+    <PageTransition>
     <div className="space-y-8">
-      <div>
+      <FadeIn>
         <h1 className="text-2xl font-semibold tracking-tight">Reports</h1>
         <p className="text-sm text-muted-foreground">
           Visualize your financial trends
         </p>
-      </div>
+      </FadeIn>
 
       {apiNotReady && (
         <div className="rounded-lg border border-border bg-card p-6 text-center">
@@ -83,7 +91,7 @@ export default function ReportsPage() {
         </div>
 
         {loadingTrend ? (
-          <Skeleton className="h-48 rounded-lg" />
+          <Skeleton className="h-48 rounded-lg skeleton-shimmer" />
         ) : trend && trend.length > 0 ? (
           <div className="rounded-lg border border-border bg-card p-4">
             {/* Bar chart legend */}
@@ -99,7 +107,7 @@ export default function ReportsPage() {
             </div>
 
             {/* Simple horizontal bar chart */}
-            <div className="space-y-2">
+            <StaggerList className="space-y-2">
               {trend.map((point) => {
                 const incPct = (point.income / maxTrendValue) * 100;
                 const spPct = (point.spending / maxTrendValue) * 100;
@@ -113,7 +121,8 @@ export default function ReportsPage() {
                 });
 
                 return (
-                  <div key={point.month} className="flex items-center gap-3">
+                  <StaggerItem key={point.month}>
+                  <div className="flex items-center gap-3">
                     <span className="w-16 shrink-0 text-right font-mono text-[11px] text-muted-foreground">
                       {label}
                     </span>
@@ -146,9 +155,10 @@ export default function ReportsPage() {
                       {fmt(point.net)}
                     </span>
                   </div>
+                  </StaggerItem>
                 );
               })}
-            </div>
+            </StaggerList>
           </div>
         ) : !trendError ? (
           <div className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
@@ -175,7 +185,7 @@ export default function ReportsPage() {
         </div>
 
         {loadingBreakdown ? (
-          <Skeleton className="h-48 rounded-lg" />
+          <Skeleton className="h-48 rounded-lg skeleton-shimmer" />
         ) : breakdown && breakdown.data.length > 0 ? (
           <div className="rounded-lg border border-border bg-card divide-y divide-border">
             {breakdown.data.map((item, idx) => (
@@ -214,6 +224,7 @@ export default function ReportsPage() {
         ) : null}
       </div>
     </div>
+    </PageTransition>
   );
 }
 

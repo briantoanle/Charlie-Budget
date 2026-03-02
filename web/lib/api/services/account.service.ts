@@ -5,29 +5,34 @@ export class AccountService extends BaseService {
   async getAccounts(): Promise<AccountResponse[]> {
     const { data, error } = await this.supabase
       .from("accounts")
-      .select("*, plaid_items(institution_name, needs_reauth, last_synced_at)")
+      .select("*, plaid_items:plaid_items(institution_name, needs_reauth, last_synced_at)")
       .eq("archived", false)
       .order("created_at", { ascending: true });
 
     if (error) {
-      throw new Error("Failed to fetch accounts");
+      console.error(`Failed to fetch accounts: ${error.message} (${error.code})`);
+      return [];
     }
 
-    const accounts = (data ?? []).map((row) => ({
-      id: row.id,
-      name: row.name,
-      type: row.type,
-      source: row.source,
-      currency: row.currency,
-      current_balance: row.current_balance,
-      balance_as_of: row.balance_as_of,
-      plaid_item_id: row.plaid_item_id,
-      institution_name: row.plaid_items?.institution_name ?? null,
-      needs_reauth: row.plaid_items?.needs_reauth ?? false,
-      last_synced_at: row.plaid_items?.last_synced_at ?? null,
-      archived: row.archived,
-      created_at: row.created_at,
-    }));
+    const accounts = (data ?? []).map((row: any) => {
+      // Supabase might return single object or array depending on relationship constraint
+      const plaidData = Array.isArray(row.plaid_items) ? row.plaid_items[0] : row.plaid_items;
+      return {
+        id: row.id,
+        name: row.name,
+        type: row.type,
+        source: row.source,
+        currency: row.currency,
+        current_balance: row.current_balance,
+        balance_as_of: row.balance_as_of,
+        plaid_item_id: row.plaid_item_id,
+        institution_name: plaidData?.institution_name ?? null,
+        needs_reauth: plaidData?.needs_reauth ?? false,
+        last_synced_at: plaidData?.last_synced_at ?? null,
+        archived: row.archived,
+        created_at: row.created_at,
+      };
+    });
 
     return accounts;
   }

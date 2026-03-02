@@ -36,16 +36,20 @@ import {
   Check,
   Loader2,
 } from "lucide-react";
+import {
+  StaggerList,
+  StaggerItem,
+} from "@/components/ui/motion-primitives";
 
 export function SettingsClientComponents() {
   return (
-    <>
-      <ProfileSection />
-      <CurrencySection />
-      <ConnectedAccountsSection />
-      <ExportSection />
-      <DangerZone />
-    </>
+    <StaggerList className="space-y-6">
+      <StaggerItem><ProfileSection /></StaggerItem>
+      <StaggerItem><CurrencySection /></StaggerItem>
+      <StaggerItem><ConnectedAccountsSection /></StaggerItem>
+      <StaggerItem><ExportSection /></StaggerItem>
+      <StaggerItem><DangerZone /></StaggerItem>
+    </StaggerList>
   );
 }
 
