@@ -138,3 +138,4 @@ See [docs/db-schema.md](docs/db-schema.md)
 | [docs/api-routes.md](docs/api-routes.md) | All API routes — methods, request/response shapes, errors |
 | [docs/frontend-flow.md](docs/frontend-flow.md) | User flows per feature |
 | [docs/supabase-setup.md](docs/supabase-setup.md) | Local dev, Plaid sandbox, and production deployment |
+9

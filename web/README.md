@@ -1,36 +1,103 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Charlie Budget — Web Frontend
 
-## Getting Started
+Personal budgeting and investment tracking app built with Next.js 16 (App Router).
 
-First, run the development server:
+## Quick Start
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# From repo root:
+npx supabase start          # Start local Supabase (Docker required)
+npx supabase db reset       # Apply migrations + seed data
+
+cd web
+cp .env.local.example .env.local   # Fill in Supabase keys
+npm install
+npm run dev                 # → http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+**Test login:** `test@charlie.dev` / `password123`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Tech Stack
 
-## Learn More
+| Layer     | Technology                                |
+| --------- | ----------------------------------------- |
+| Framework | Next.js 16 (App Router, Turbopack)        |
+| UI        | shadcn/ui + Tailwind CSS v4               |
+| Data      | TanStack Query v5 (queries + mutations)   |
+| Auth & DB | Supabase (PostgreSQL + RLS)               |
+| Banking   | Plaid (account linking, transaction sync) |
 
-To learn more about Next.js, take a look at the following resources:
+## Design System
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+**Aesthetic**: Industrial Utilitarian — dense information, restrained palette, precise typography.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Token        | Value          | Usage                                 |
+| ------------ | -------------- | ------------------------------------- |
+| Display font | DM Sans        | Headings, labels, UI text             |
+| Mono font    | JetBrains Mono | Financial amounts, tabular data       |
+| Background   | `#0F1117`      | Deep charcoal                         |
+| Accent       | `#8B9A6B`      | Olive — positive values, income       |
+| Destructive  | `#E07A5F`      | Coral — expenses, alerts, over-budget |
 
-## Deploy on Vercel
+## Project Structure
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+web/
+├── app/
+│   ├── (auth)/          # Login, Signup, Forgot Password
+│   │   ├── login/
+│   │   ├── signup/
+│   │   └── forgot-password/
+│   ├── (app)/           # Authenticated app shell
+│   │   ├── dashboard/   # Net worth, cashflow, recent txns
+│   │   ├── accounts/    # Bank accounts + Plaid Link
+│   │   ├── transactions/# Search, filter, paginate
+│   │   ├── categories/  # CRUD (create, rename, archive, delete)
+│   │   ├── budgets/     # Month navigator, lines, progress bars
+│   │   ├── reports/     # Cashflow trend, category breakdown
+│   │   ├── investments/ # (Phase 3 stub)
+│   │   └── settings/    # (Phase 3 stub)
+│   ├── api/             # Route handlers (see docs/api-routes.md)
+│   └── layout.tsx       # Root layout (fonts, providers)
+├── components/
+│   ├── ui/              # shadcn/ui primitives
+│   ├── dashboard/       # Balance card, cashflow card, recent txns
+│   ├── accounts/        # Account card, Plaid Link button
+│   ├── transactions/    # Table, filters
+│   └── app-sidebar.tsx  # Navigation sidebar
+├── lib/
+│   ├── api/hooks.ts     # TanStack Query hooks (10 queries + mutations)
+│   ├── actions/auth.ts  # Server Actions (login, signup, forgot-pw)
+│   └── supabase/        # Client + server Supabase instances
+└── proxy.ts             # Auth protection for (app) routes (Next.js 16)
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Build Status
+
+| Phase                     | Status     | Features                                              |
+| ------------------------- | ---------- | ----------------------------------------------------- |
+| 1. Foundation             | ✅ Done    | Auth flow, sidebar, Dashboard, Accounts, Transactions |
+| 2. Budgets & Reports      | ✅ Done    | Categories CRUD, Budget lines + progress, Reports     |
+| 3. Investments & Settings | 🔲 Planned | Holdings, DRIP, profile settings                      |
+| 4. Polish                 | 🔲 Planned | Responsive, a11y, SEO metadata                        |
+
+## Available Scripts
+
+```bash
+npm run dev       # Start dev server (Turbopack)
+npm run build     # Production build (catches TS errors)
+npm run lint      # ESLint
+npm run start     # Serve production build
+```
+
+## Docs
+
+See the parent [README](../README.md) for full architecture, security details, and DB schema.
+
+| Doc                                               | Contents               |
+| ------------------------------------------------- | ---------------------- |
+| [docs/api-routes.md](../docs/api-routes.md)       | All API endpoints      |
+| [docs/frontend-flow.md](../docs/frontend-flow.md) | User flows per feature |
+| [docs/db-schema.md](../docs/db-schema.md)         | Full ERD               |
