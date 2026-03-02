@@ -1,1 +1,4 @@
 agent.md
+.agents/rules/total-guide.md
+web/tests/plaid-routes.test.ts
+web/tests/plaid-sandbox.test.ts

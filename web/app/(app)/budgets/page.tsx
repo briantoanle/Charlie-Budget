@@ -9,6 +9,7 @@ import {
   useAddBudgetLine,
   useUpdateBudgetLine,
   useDeleteBudgetLine,
+  useCreateCategory,
 } from "@/lib/api/hooks";
 
 import { Button } from "@/components/ui/button";
@@ -63,6 +64,7 @@ export default function BudgetsPage() {
   const addLine = useAddBudgetLine();
   const updateLine = useUpdateBudgetLine();
   const deleteLine = useDeleteBudgetLine();
+  const createCategory = useCreateCategory();
 
   const [addingLine, setAddingLine] = useState(false);
   const [newCatId, setNewCatId] = useState("");
@@ -220,6 +222,61 @@ export default function BudgetsPage() {
                   className="h-14 rounded-lg skeleton-shimmer"
                 />
               ))}
+            </motion.div>
+          ) : !categories || categories.length === 0 ? (
+            /* No categories yet */
+            <motion.div
+              key="no-categories"
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border p-12 text-center">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <Plus className="h-6 w-6" />
+                </div>
+                <h3 className="mt-4 text-lg font-semibold">First, create some categories</h3>
+                <p className="mt-2 text-sm text-muted-foreground max-w-sm">
+                  You need categories to start budgeting. Create your own or pick some common ones to get started quickly.
+                </p>
+                
+                <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {[
+                    { name: "Housing", icon: "🏠" },
+                    { name: "Food & Groceries", icon: "🍏" },
+                    { name: "Transportation", icon: "🚗" },
+                    { name: "Utilities", icon: "⚡" },
+                    { name: "Entertainment", icon: "🍿" },
+                    { name: "Shopping", icon: "🛍️" },
+                  ].map((cat) => (
+                    <Button
+                      key={cat.name}
+                      variant="outline"
+                      className="h-auto flex-col gap-1 py-3 px-4 hover:border-primary/50 hover:bg-primary/5 active:scale-95 transition-all"
+                      onClick={() => 
+                        createCategory.mutate({ name: cat.name, kind: "expense" })
+                      }
+                    >
+                      <span className="text-xl">{cat.icon}</span>
+                      <span className="text-xs font-medium">{cat.name}</span>
+                    </Button>
+                  ))}
+                </div>
+
+                <div className="mt-8 flex items-center gap-4">
+                  <div className="h-px flex-1 bg-border" />
+                  <span className="text-xs text-muted-foreground uppercase tracking-widest">or</span>
+                  <div className="h-px flex-1 bg-border" />
+                </div>
+
+                <Button
+                  variant="link"
+                  className="mt-4"
+                  onClick={() => window.location.href = "/categories"}
+                >
+                  Go to Categories page to create custom ones
+                </Button>
+              </div>
             </motion.div>
           ) : !budget ? (
             /* No budget yet */

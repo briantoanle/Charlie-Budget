@@ -7,6 +7,7 @@
 -- Create a test user directly in auth.users
 -- Email: test@charlie.dev  |  Password: password123
 insert into auth.users (
+  instance_id,
   id,
   email,
   encrypted_password,
@@ -16,8 +17,12 @@ insert into auth.users (
   created_at,
   updated_at,
   role,
-  aud
+  aud,
+  phone,
+  is_sso_user,
+  confirmed_at
 ) values (
+  '00000000-0000-0000-0000-000000000000',   -- required: GoTrue filters on this
   '00000000-0000-0000-0000-000000000001',
   'test@charlie.dev',
   crypt('password123', gen_salt('bf')),
@@ -27,7 +32,36 @@ insert into auth.users (
   now(),
   now(),
   'authenticated',
-  'authenticated'
+  'authenticated',
+  '',             -- phone (required non-null by GoTrue)
+  false,          -- is_sso_user
+  now()           -- confirmed_at
+) on conflict (id) do update set
+  instance_id = excluded.instance_id,
+  encrypted_password = excluded.encrypted_password,
+  phone = excluded.phone,
+  is_sso_user = excluded.is_sso_user,
+  confirmed_at = excluded.confirmed_at;
+
+-- Add an identity to auth.identities so the user shows up in the Supabase dashboard
+insert into auth.identities (
+  id,
+  user_id,
+  provider_id,
+  identity_data,
+  provider,
+  last_sign_in_at,
+  created_at,
+  updated_at
+) values (
+  '00000000-0000-0000-0000-000000000001',
+  '00000000-0000-0000-0000-000000000001',
+  '00000000-0000-0000-0000-000000000001',
+  '{"sub":"00000000-0000-0000-0000-000000000001","email":"test@charlie.dev"}',
+  'email',
+  now(),
+  now(),
+  now()
 ) on conflict (id) do nothing;
 
 -- Profile is created automatically by the handle_new_user trigger,
