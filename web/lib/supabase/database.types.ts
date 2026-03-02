@@ -225,6 +225,165 @@ export type Database = {
         }
         Relationships: []
       }
+      investment_accounts: {
+        Row: {
+          id: string
+          user_id: string
+          name: string
+          broker: string | null
+          currency: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          name: string
+          broker?: string | null
+          currency?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          name?: string
+          broker?: string | null
+          currency?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      investment_dividends: {
+        Row: {
+          id: string
+          user_id: string
+          account_id: string
+          ticker: string
+          amount: number
+          per_share: number | null
+          ex_date: string | null
+          pay_date: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          account_id: string
+          ticker: string
+          amount: number
+          per_share?: number | null
+          ex_date?: string | null
+          pay_date?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          account_id?: string
+          ticker?: string
+          amount?: number
+          per_share?: number | null
+          ex_date?: string | null
+          pay_date?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investment_dividends_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "investment_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      investment_holdings: {
+        Row: {
+          id: string
+          user_id: string
+          account_id: string
+          ticker: string
+          quantity: number
+          avg_cost: number
+          current_price: number | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          account_id: string
+          ticker: string
+          quantity: number
+          avg_cost: number
+          current_price?: number | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          account_id?: string
+          ticker?: string
+          quantity?: number
+          avg_cost?: number
+          current_price?: number | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investment_holdings_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "investment_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      investment_trades: {
+        Row: {
+          id: string
+          user_id: string
+          account_id: string
+          ticker: string
+          side: string
+          quantity: number
+          price: number
+          total: number
+          trade_date: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          account_id: string
+          ticker: string
+          side: string
+          quantity: number
+          price: number
+          total: number
+          trade_date: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          account_id?: string
+          ticker?: string
+          side?: string
+          quantity?: number
+          price?: number
+          total?: number
+          trade_date?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investment_trades_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "investment_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plaid_items: {
         Row: {
           access_token_enc: string
