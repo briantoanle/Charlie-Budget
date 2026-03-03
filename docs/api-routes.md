@@ -4,16 +4,16 @@ All routes live under `app/api/` using the Next.js App Router convention (`route
 
 ## Conventions
 
-| Convention | Detail |
-|---|---|
-| Auth | Supabase session cookie — SSR middleware rejects unauthenticated requests with `401` |
-| Content-Type | `application/json` unless noted (export route returns file) |
-| Success | `200 OK` with JSON body; `201 Created` for new resources |
-| No content | `204 No Content` for deletes |
-| Errors | `{ "error": string }` with appropriate HTTP status |
-| IDs | UUIDs |
-| Dates | `YYYY-MM-DD` for calendar dates; ISO 8601 for timestamps |
-| Amounts | Decimal numbers in the account's native currency (e.g. `42.50`) — negative = expense, positive = income |
+| Convention   | Detail                                                                                                  |
+| ------------ | ------------------------------------------------------------------------------------------------------- |
+| Auth         | Supabase session cookie — SSR middleware rejects unauthenticated requests with `401`                    |
+| Content-Type | `application/json` unless noted (export route returns file)                                             |
+| Success      | `200 OK` with JSON body; `201 Created` for new resources                                                |
+| No content   | `204 No Content` for deletes                                                                            |
+| Errors       | `{ "error": string }` with appropriate HTTP status                                                      |
+| IDs          | UUIDs                                                                                                   |
+| Dates        | `YYYY-MM-DD` for calendar dates; ISO 8601 for timestamps                                                |
+| Amounts      | Decimal numbers in the account's native currency (e.g. `42.50`) — negative = expense, positive = income |
 
 ---
 
@@ -26,6 +26,7 @@ All routes live under `app/api/` using the Next.js App Router convention (`route
 - [Budgets](#budgets)
 - [Reports](#reports)
 - [Investments](#investments)
+- [Savings Goals](#savings-goals)
 - [Settings](#settings)
 
 ---
@@ -37,6 +38,7 @@ All routes live under `app/api/` using the Next.js App Router convention (`route
 Creates a Plaid Link token to open the Plaid Link modal in the browser.
 
 **Request body**
+
 ```json
 {
   "mode": "create" | "update",
@@ -45,6 +47,7 @@ Creates a Plaid Link token to open the Plaid Link modal in the browser.
 ```
 
 **Response**
+
 ```json
 {
   "link_token": "link-sandbox-..."
@@ -66,6 +69,7 @@ Creates a Plaid Link token to open the Plaid Link modal in the browser.
 Exchanges a Plaid `public_token` for an `access_token`, encrypts and stores it in `plaid_items` via Supabase Vault, fetches accounts from Plaid, and kicks off an initial transaction sync.
 
 **Request body**
+
 ```json
 {
   "public_token": "public-sandbox-...",
@@ -75,6 +79,7 @@ Exchanges a Plaid `public_token` for an `access_token`, encrypts and stores it i
 ```
 
 **Response**
+
 ```json
 {
   "plaid_item_id": "uuid",
@@ -106,6 +111,7 @@ Exchanges a Plaid `public_token` for an `access_token`, encrypts and stores it i
 Triggers an incremental transaction sync for a specific Plaid item using the stored cursor.
 
 **Request body**
+
 ```json
 {
   "plaid_item_id": "uuid"
@@ -113,6 +119,7 @@ Triggers an incremental transaction sync for a specific Plaid item using the sto
 ```
 
 **Response**
+
 ```json
 {
   "added": 12,
@@ -155,6 +162,28 @@ Receives and processes Plaid webhook events. **Not authenticated via Supabase se
 
 ---
 
+### `DELETE /api/plaid/items/[id]`
+
+Archives or permanently deletes a Plaid connection and its associated accounts.
+
+**Query params**
+| Param | Type | Description |
+|---|---|---|
+| `action` | `"archive"` \| `"delete"` | **Required.** Determines whether to archive accounts or permanently delete them. |
+
+**Response:** `204 No Content`
+
+**Errors**
+| Status | Reason |
+|---|---|
+| `400` | Invalid or missing `action` |
+| `404` | Plaid item not found |
+| `500` | Database error when removing associated accounts |
+
+**Notes:** Best-effort revocation of the Plaid access token.
+
+---
+
 ## Accounts
 
 ### `GET /api/accounts`
@@ -162,6 +191,7 @@ Receives and processes Plaid webhook events. **Not authenticated via Supabase se
 Returns all non-archived accounts for the authenticated user, joined with Plaid item metadata.
 
 **Response**
+
 ```json
 {
   "accounts": [
@@ -171,7 +201,7 @@ Returns all non-archived accounts for the authenticated user, joined with Plaid 
       "type": "checking",
       "source": "plaid",
       "currency": "USD",
-      "current_balance": 4210.00,
+      "current_balance": 4210.0,
       "balance_as_of": "2026-02-25T18:00:00Z",
       "plaid_item_id": "uuid",
       "institution_name": "Chase",
@@ -193,21 +223,22 @@ Returns all non-archived accounts for the authenticated user, joined with Plaid 
 Creates a manual account (not linked to Plaid).
 
 **Request body**
+
 ```json
 {
   "name": "Main Checking",
   "type": "checking",
   "currency": "USD",
-  "current_balance": 4250.00
+  "current_balance": 4250.0
 }
 ```
 
-| Field | Required | Default |
-|---|---|---|
-| `name` | Yes | — |
-| `type` | Yes | — |
-| `currency` | No | `"USD"` |
-| `current_balance` | No | `null` |
+| Field             | Required | Default |
+| ----------------- | -------- | ------- |
+| `name`            | Yes      | —       |
+| `type`            | Yes      | —       |
+| `currency`        | No       | `"USD"` |
+| `current_balance` | No       | `null`  |
 
 **Response:** `201` + created account object with `source: "manual"`.
 
@@ -222,7 +253,8 @@ Creates a manual account (not linked to Plaid).
 
 Updates user-editable fields on an account.
 
-**Request body** *(all fields optional)*
+**Request body** _(all fields optional)_
+
 ```json
 {
   "name": "My Checking",
@@ -276,14 +308,15 @@ Returns a paginated, filterable list of transactions for the authenticated user.
 | `pending` | boolean | — | Filter pending / settled transactions |
 
 **Response**
+
 ```json
 {
   "data": [
     {
       "id": "uuid",
       "txn_date": "2026-02-20",
-      "amount": -52.40,
-      "amount_base": -52.40,
+      "amount": -52.4,
+      "amount_base": -52.4,
       "currency": "USD",
       "merchant": "Whole Foods",
       "note": null,
@@ -312,11 +345,12 @@ Returns a paginated, filterable list of transactions for the authenticated user.
 Creates a manual transaction (not synced from Plaid).
 
 **Request body**
+
 ```json
 {
   "account_id": "uuid",
   "txn_date": "2026-02-25",
-  "amount": -52.40,
+  "amount": -52.4,
   "category_id": "uuid",
   "merchant": "Whole Foods",
   "note": "Weekly groceries",
@@ -324,15 +358,15 @@ Creates a manual transaction (not synced from Plaid).
 }
 ```
 
-| Field | Required | Default |
-|---|---|---|
-| `account_id` | Yes | — |
-| `txn_date` | Yes | — |
-| `amount` | Yes | — |
-| `category_id` | No | `null` |
-| `merchant` | No | `null` |
-| `note` | No | `null` |
-| `currency` | No | `"USD"` |
+| Field         | Required | Default |
+| ------------- | -------- | ------- |
+| `account_id`  | Yes      | —       |
+| `txn_date`    | Yes      | —       |
+| `amount`      | Yes      | —       |
+| `category_id` | No       | `null`  |
+| `merchant`    | No       | `null`  |
+| `note`        | No       | `null`  |
+| `currency`    | No       | `"USD"` |
 
 **Response:** `201` + created transaction object with `source: "manual"`.
 
@@ -350,7 +384,8 @@ Creates a manual transaction (not synced from Plaid).
 
 Updates user-editable fields on a single transaction.
 
-**Request body** *(all fields optional)*
+**Request body** _(all fields optional)_
+
 ```json
 {
   "category_id": "uuid",
@@ -387,6 +422,7 @@ Soft-deletes a transaction by setting `deleted_at`.
 Applies a single action to multiple transactions at once.
 
 **Request body**
+
 ```json
 {
   "ids": ["uuid", "uuid"],
@@ -396,6 +432,7 @@ Applies a single action to multiple transactions at once.
 ```
 
 **Response**
+
 ```json
 {
   "updated": 5
@@ -422,6 +459,7 @@ Returns all categories for the user, ordered by `sort_order`.
 | `include_archived` | boolean | `false` | Include archived categories |
 
 **Response**
+
 ```json
 {
   "categories": [
@@ -444,6 +482,7 @@ Returns all categories for the user, ordered by `sort_order`.
 Creates a new category.
 
 **Request body**
+
 ```json
 {
   "name": "Groceries",
@@ -466,7 +505,8 @@ Creates a new category.
 
 Updates a category.
 
-**Request body** *(all fields optional)*
+**Request body** _(all fields optional)_
+
 ```json
 {
   "name": "Food & Drink",
@@ -513,6 +553,7 @@ Returns the budget for a given month with all lines and actuals calculated.
 | `month` | YYYY-MM | **Required.** Month to fetch. |
 
 **Response**
+
 ```json
 {
   "budget": {
@@ -524,12 +565,12 @@ Returns the budget for a given month with all lines and actuals calculated.
         "id": "uuid",
         "category_id": "uuid",
         "category_name": "Groceries",
-        "planned_amount": 600.00,
-        "actual_amount": 420.50
+        "planned_amount": 600.0,
+        "actual_amount": 420.5
       }
     ],
     "totals": {
-      "planned": 3200.00,
+      "planned": 3200.0,
       "actual": 2810.75
     }
   }
@@ -545,6 +586,7 @@ Returns the budget for a given month with all lines and actuals calculated.
 Creates a new empty budget for a month.
 
 **Request body**
+
 ```json
 {
   "month": "2026-03"
@@ -566,6 +608,7 @@ Creates a new empty budget for a month.
 Copies all budget lines from a source month into a new budget for the target month.
 
 **Request body**
+
 ```json
 {
   "source_month": "2026-02",
@@ -588,10 +631,11 @@ Copies all budget lines from a source month into a new budget for the target mon
 Adds a category line to an existing budget.
 
 **Request body**
+
 ```json
 {
   "category_id": "uuid",
-  "planned_amount": 200.00
+  "planned_amount": 200.0
 }
 ```
 
@@ -610,9 +654,10 @@ Adds a category line to an existing budget.
 Updates the planned amount for a budget line.
 
 **Request body**
+
 ```json
 {
-  "planned_amount": 350.00
+  "planned_amount": 350.0
 }
 ```
 
@@ -654,12 +699,13 @@ Returns month-by-month income, spending, and net cashflow.
 | `months` | number | `12` | How many months to look back (max: `24`) |
 
 **Response**
+
 ```json
 {
   "data": [
     {
       "month": "2026-02",
-      "income": 5000.00,
+      "income": 5000.0,
       "spending": 2810.75,
       "net": 2189.25
     }
@@ -683,13 +729,14 @@ Returns total spending (or income) per category over a date range.
 | `kind` | `expense` \| `income` | Category kind to aggregate (default: `expense`) |
 
 **Response**
+
 ```json
 {
   "data": [
     {
       "category_id": "uuid",
       "category_name": "Groceries",
-      "total": 1240.50,
+      "total": 1240.5,
       "percentage": 22.4
     }
   ],
@@ -710,6 +757,7 @@ Returns total spending (or income) per category over a date range.
 Returns all investment accounts for the user.
 
 **Response**
+
 ```json
 {
   "accounts": [
@@ -731,6 +779,7 @@ Returns all investment accounts for the user.
 Creates an investment account.
 
 **Request body**
+
 ```json
 {
   "name": "Fidelity IRA",
@@ -752,7 +801,8 @@ Creates an investment account.
 
 Updates an investment account.
 
-**Request body** *(all fields optional)*
+**Request body** _(all fields optional)_
+
 ```json
 {
   "name": "Fidelity Roth IRA",
@@ -780,6 +830,7 @@ Returns current holdings with live market price and unrealised P&L.
 | `account_id` | uuid | Filter by investment account (optional) |
 
 **Response**
+
 ```json
 {
   "holdings": [
@@ -787,10 +838,10 @@ Returns current holdings with live market price and unrealised P&L.
       "id": "uuid",
       "ticker": "AAPL",
       "quantity": 10,
-      "avg_cost": 150.00,
-      "current_price": 228.50,
-      "market_value": 2285.00,
-      "unrealized_pnl": 785.00,
+      "avg_cost": 150.0,
+      "current_price": 228.5,
+      "market_value": 2285.0,
+      "unrealized_pnl": 785.0,
       "unrealized_pnl_pct": 52.33,
       "account_id": "uuid"
     }
@@ -813,6 +864,7 @@ Returns trade history.
 | `ticker` | string | Filter by ticker symbol (optional) |
 
 **Response**
+
 ```json
 {
   "trades": [
@@ -837,6 +889,7 @@ Returns trade history.
 Logs a buy or sell trade and recalculates the holding's `avg_cost` and `quantity`.
 
 **Request body**
+
 ```json
 {
   "account_id": "uuid",
@@ -872,13 +925,14 @@ Returns dividend history.
 | `ticker` | string | Filter by ticker symbol (optional) |
 
 **Response**
+
 ```json
 {
   "dividends": [
     {
       "id": "uuid",
       "ticker": "AAPL",
-      "amount": 23.50,
+      "amount": 23.5,
       "per_share": 0.25,
       "ex_date": "2024-08-09",
       "pay_date": "2024-08-15",
@@ -895,11 +949,12 @@ Returns dividend history.
 Logs a dividend payment.
 
 **Request body**
+
 ```json
 {
   "account_id": "uuid",
   "ticker": "AAPL",
-  "amount": 23.50,
+  "amount": 23.5,
   "per_share": 0.25,
   "ex_date": "2024-08-09",
   "pay_date": "2024-08-15"
@@ -916,6 +971,104 @@ Logs a dividend payment.
 
 ---
 
+## Savings Goals
+
+### `GET /api/savings-goals`
+
+Returns all savings goals for the user, ordered by creation date descending.
+
+**Query params**
+| Param | Type | Default | Description |
+|---|---|---|---|
+| `include_archived` | boolean | `false` | Include archived savings goals |
+
+**Response**
+
+```json
+{
+  "goals": [
+    {
+      "id": "uuid",
+      "name": "Vacation Fund",
+      "target_amount": 5000.0,
+      "current_amount": 1200.0,
+      "currency": "USD",
+      "target_date": "2026-12-01",
+      "color": "#10b981",
+      "emoji": "🌴",
+      "archived": false,
+      "created_at": "2026-03-02T00:00:00Z"
+    }
+  ]
+}
+```
+
+---
+
+### `POST /api/savings-goals`
+
+Creates a new savings goal.
+
+**Request body**
+
+```json
+{
+  "name": "Vacation Fund",
+  "target_amount": 5000.0,
+  "current_amount": 1200.0,
+  "currency": "USD",
+  "target_date": "2026-12-01",
+  "color": "#10b981",
+  "emoji": "🌴"
+}
+```
+
+**Response:** `201` + created goal object.
+
+**Errors**
+| Status | Reason |
+|---|---|
+| `400` | `name` or `target_amount` missing/invalid |
+
+---
+
+### `PATCH /api/savings-goals/[id]`
+
+Updates a savings goal.
+
+**Request body** _(all fields optional)_
+
+```json
+{
+  "current_amount": 1500.0,
+  "archived": true
+}
+```
+
+**Response:** Updated goal object.
+
+**Errors**
+| Status | Reason |
+|---|---|
+| `404` | Goal not found |
+| `500` | Database error |
+
+---
+
+### `DELETE /api/savings-goals/[id]`
+
+Permanently deletes a savings goal.
+
+**Response:** `204 No Content`
+
+**Errors**
+| Status | Reason |
+|---|---|
+| `404` | Goal not found |
+| `500` | Database error |
+
+---
+
 ## Settings
 
 ### `GET /api/settings`
@@ -923,6 +1076,7 @@ Logs a dividend payment.
 Returns the user's profile and preferences.
 
 **Response**
+
 ```json
 {
   "profile": {
@@ -941,6 +1095,7 @@ Returns the user's profile and preferences.
 Updates the user's display name.
 
 **Request body**
+
 ```json
 {
   "display_name": "Toan"
@@ -961,6 +1116,7 @@ Updates the user's display name.
 Changes the user's base currency and recalculates `amount_base` on all transactions using historical FX rates.
 
 **Request body**
+
 ```json
 {
   "currency": "EUR"
@@ -968,6 +1124,7 @@ Changes the user's base currency and recalculates `amount_base` on all transacti
 ```
 
 **Response**
+
 ```json
 {
   "currency": "EUR",
@@ -990,6 +1147,7 @@ Changes the user's base currency and recalculates `amount_base` on all transacti
 Exports all user data as a downloadable file.
 
 **Request body**
+
 ```json
 {
   "format": "csv" | "json"
@@ -998,9 +1156,9 @@ Exports all user data as a downloadable file.
 
 **Response:** File download via `Content-Disposition: attachment`.
 
-| Format | Content-Type | Contents |
-|---|---|---|
-| `csv` | `text/csv` | Transactions with all fields |
+| Format | Content-Type       | Contents                                                 |
+| ------ | ------------------ | -------------------------------------------------------- |
+| `csv`  | `text/csv`         | Transactions with all fields                             |
 | `json` | `application/json` | Full export: accounts, transactions, categories, budgets |
 
 **Errors**
@@ -1015,6 +1173,7 @@ Exports all user data as a downloadable file.
 Permanently deletes the account: revokes all Plaid tokens, wipes all user data, and signs out.
 
 **Request body**
+
 ```json
 {
   "confirm": "DELETE"

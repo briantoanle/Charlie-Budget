@@ -7,6 +7,7 @@ erDiagram
         uuid id PK
         text display_name
         text base_currency
+        text country
         timestamptz created_at
     }
 
@@ -68,6 +69,21 @@ erDiagram
         timestamptz created_at
     }
 
+    %% Savings Goals
+    savings_goals {
+        uuid id PK
+        uuid user_id FK
+        text name
+        numeric target_amount
+        numeric current_amount
+        text currency
+        date target_date
+        text color
+        text emoji
+        boolean archived
+        timestamptz created_at
+    }
+
     %% Budgeting
     budgets {
         uuid id PK
@@ -126,6 +142,7 @@ erDiagram
     profiles ||--o{ accounts : "owns"
     profiles ||--o{ transactions : "owns"
     profiles ||--o{ budgets : "owns"
+    profiles ||--o{ savings_goals : "owns"
     profiles ||--o{ plaid_items : "owns"
     profiles ||--o{ investment_accounts : "owns"
 

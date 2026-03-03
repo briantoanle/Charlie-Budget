@@ -1,6 +1,7 @@
 # Charlie Budget App - Complete Architecture Guide
 
 ## Table of Contents
+
 1. [High-Level Overview](#high-level-overview)
 2. [Tech Stack & Why](#tech-stack--why)
 3. [Project Structure](#project-structure)
@@ -33,7 +34,8 @@ Charlie is a **full-stack personal finance web application** with three main lay
 │  - GET/POST /api/accounts                       │
 │  - GET/POST /api/transactions                   │
 │  - GET/POST /api/budgets                        │
-│  - POST /api/plaid/*                            │
+│  - GET/POST/PATCH/DELETE /api/savings-goals     │
+│  - POST/DELETE /api/plaid/*                     │
 │  - GET /api/settings                            │
 │                                                  │
 │  All routes: authenticate → validate → query    │
@@ -60,17 +62,18 @@ Charlie is a **full-stack personal finance web application** with three main lay
 
 ## Tech Stack & Why
 
-| Layer | Technology | Why |
-|-------|-----------|-----|
-| **Frontend** | React 19 + Next.js 16.1.6 | Server/client components, built-in API routes, great DX |
-| **Styling** | Tailwind CSS v4 + shadcn/ui | Utility-first, accessible components, fast iteration |
-| **Data Fetching** | TanStack Query v5 | Client-side caching, automatic refetching, optimistic updates |
-| **Database** | Supabase (PostgreSQL 17) | Managed, RLS for security, built-in auth, generous free tier |
-| **Auth** | @supabase/ssr + cookies | Secure session-based auth, SSR-compatible, no third-party dependency |
-| **Bank Linking** | Plaid SDK v41 | Industry standard, supports 12k+ institutions, secure token exchange |
-| **Real-time Sync** | PostgreSQL webhooks + Plaid webhooks | Passive polling on schedule, push from Plaid when changes occur |
+| Layer              | Technology                           | Why                                                                  |
+| ------------------ | ------------------------------------ | -------------------------------------------------------------------- |
+| **Frontend**       | React 19 + Next.js 16.1.6            | Server/client components, built-in API routes, great DX              |
+| **Styling**        | Tailwind CSS v4 + shadcn/ui          | Utility-first, accessible components, fast iteration                 |
+| **Data Fetching**  | TanStack Query v5                    | Client-side caching, automatic refetching, optimistic updates        |
+| **Database**       | Supabase (PostgreSQL 17)             | Managed, RLS for security, built-in auth, generous free tier         |
+| **Auth**           | @supabase/ssr + cookies              | Secure session-based auth, SSR-compatible, no third-party dependency |
+| **Bank Linking**   | Plaid SDK v41                        | Industry standard, supports 12k+ institutions, secure token exchange |
+| **Real-time Sync** | PostgreSQL webhooks + Plaid webhooks | Passive polling on schedule, push from Plaid when changes occur      |
 
 **Why this stack?**
+
 - **Monolithic simplicity**: Backend and frontend in one repo (Next.js)
 - **Type safety**: TypeScript everywhere (Supabase auto-generates types)
 - **Security by default**: RLS prevents data leaks, cookies are HttpOnly
@@ -106,7 +109,11 @@ web/
 │       ├── settings/
 │       │   ├── route.ts              # GET /api/settings
 │       │   └── profile/route.ts      # PATCH /api/settings/profile
+│       ├── savings-goals/
+│       │   ├── route.ts              # GET/POST /api/savings-goals
+│       │   └── [id]/route.ts         # PATCH/DELETE /api/savings-goals/[id]
 │       └── plaid/
+│           ├── items/[id]/route.ts   # DELETE /api/plaid/items/[id]
 │           ├── link-token/route.ts   # POST /api/plaid/link-token
 │           ├── exchange-token/route.ts # POST /api/plaid/exchange-token
 │           └── sync/route.ts         # POST /api/plaid/sync
@@ -163,6 +170,7 @@ profiles
   ├─ user_id (uuid, fk to auth.users)  ← Supabase manages this
   ├─ display_name (text)
   ├─ base_currency (text, default 'USD')
+  ├─ country (text, nullable)  ← For holiday predictions
   └─ created_at (timestamp)
 
 -- Categories (expense/income/transfer buckets)
@@ -221,6 +229,20 @@ transactions
   ├─ deleted_at (timestamp, nullable)  ← Soft delete (not hard delete)
   └─ created_at (timestamp)
 
+-- Savings Goals (envelope budgeting / long term targets)
+savings_goals
+  ├─ id (uuid, pk)
+  ├─ user_id (uuid)
+  ├─ name (text)
+  ├─ target_amount (numeric)
+  ├─ current_amount (numeric, default 0)
+  ├─ currency (text, default 'USD')
+  ├─ target_date (date, nullable)
+  ├─ color (text, nullable)
+  ├─ emoji (text, nullable)
+  ├─ archived (boolean, default false)
+  └─ created_at (timestamp)
+
 -- Budgets (monthly spending plans)
 budgets
   ├─ id (uuid, pk)
@@ -271,6 +293,7 @@ CREATE POLICY "users_create_categories"
 ```
 
 **How it works:**
+
 1. User logs in → Supabase sets `auth.uid()` in session
 2. Every query is automatically filtered by `auth.uid()`
 3. If user tries to access another user's category, RLS blocks it (404)
@@ -299,17 +322,18 @@ const response = await fetch("/api/transactions", {
   body: JSON.stringify({
     account_id: "550e8400-e29b-41d4-a716-446655440000",
     txn_date: "2026-02-25",
-    amount: -52.40,
+    amount: -52.4,
     category_id: "650e8400-e29b-41d4-a716-446655440001",
     merchant: "Whole Foods",
-    currency: "USD"
-  })
+    currency: "USD",
+  }),
 });
 ```
 
 ### Step 2: Network
 
 Browser sends HTTP request:
+
 ```
 POST /api/transactions HTTP/1.1
 Host: localhost:3000
@@ -343,7 +367,7 @@ export async function POST(req: NextRequest) {
 
   // 3.2 Authenticate user (read session cookie)
   const auth = await getAuth();
-  if (auth.error) return auth.error;  // Return 401 if not logged in
+  if (auth.error) return auth.error; // Return 401 if not logged in
   const { user, supabase } = auth;
   // user.id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 
@@ -367,19 +391,21 @@ export async function POST(req: NextRequest) {
   // 3.5 Insert transaction
   const { data: transaction, error: insertError } = await supabase
     .from("transactions")
-    .insert([{
-      user_id: user.id,                    // ← Set user_id from auth
-      account_id: body.account_id,
-      txn_date: body.txn_date,
-      amount: body.amount,
-      amount_base: body.amount,            // ← For MVP: same as amount
-      currency: body.currency || "USD",
-      category_id: body.category_id || null,
-      merchant: body.merchant || null,
-      note: body.note || null,
-      source: "manual",                    // ← Manually created, not from Plaid
-      pending: false
-    }])
+    .insert([
+      {
+        user_id: user.id, // ← Set user_id from auth
+        account_id: body.account_id,
+        txn_date: body.txn_date,
+        amount: body.amount,
+        amount_base: body.amount, // ← For MVP: same as amount
+        currency: body.currency || "USD",
+        category_id: body.category_id || null,
+        merchant: body.merchant || null,
+        note: body.note || null,
+        source: "manual", // ← Manually created, not from Plaid
+        pending: false,
+      },
+    ])
     .select();
 
   if (insertError) {
@@ -395,6 +421,7 @@ export async function POST(req: NextRequest) {
 ### Step 4: Supabase (Database)
 
 Receives SQL query:
+
 ```sql
 INSERT INTO transactions (
   user_id, account_id, txn_date, amount, amount_base, currency,
@@ -416,6 +443,7 @@ INSERT INTO transactions (
 ```
 
 **RLS checks:**
+
 - Policy: `auth.uid() = user_id` ✓ (logged-in user = user_id in INSERT)
 - Database inserts row and returns full row
 
@@ -523,17 +551,17 @@ export async function getAuth(): Promise<AuthResult> {
     const supabase = await supabaseServer();
 
     // Get current user from session
-    const { data: { user }, error } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
 
     if (error || !user) {
       // No valid session
       return {
         user: null,
         supabase: null,
-        error: Response.json(
-          { error: "Unauthorized" },
-          { status: 401 }
-        )
+        error: Response.json({ error: "Unauthorized" }, { status: 401 }),
       };
     }
 
@@ -543,10 +571,7 @@ export async function getAuth(): Promise<AuthResult> {
     return {
       user: null,
       supabase: null,
-      error: Response.json(
-        { error: "Auth error" },
-        { status: 401 }
-      )
+      error: Response.json({ error: "Auth error" }, { status: 401 }),
     };
   }
 }
@@ -555,11 +580,13 @@ export async function getAuth(): Promise<AuthResult> {
 ### Why Cookies + HttpOnly?
 
 ✅ **Secure:**
+
 - XSS attack cannot steal token (HttpOnly = JavaScript cannot access)
 - CSRF protected (cookies only sent to matching domain)
 - Token automatically included in all requests
 
 ❌ **Not Secure:**
+
 - Storing token in localStorage (XSS can steal it)
 - Passing token in URL (`/api/transactions?token=...` visible in logs)
 
@@ -581,7 +608,7 @@ import { json, error } from "@/lib/api/response";
 export async function GET(req: NextRequest) {
   // 1. AUTHENTICATION
   const auth = await getAuth();
-  if (auth.error) return auth.error;  // Return 401 if not logged in
+  if (auth.error) return auth.error; // Return 401 if not logged in
   const { user, supabase } = auth;
 
   // 2. PARSE QUERY PARAMETERS
@@ -593,12 +620,12 @@ export async function GET(req: NextRequest) {
   let query = supabase
     .from("categories")
     .select("*")
-    .eq("user_id", user.id)  // RLS does this, but explicit is clearer
-    .order("sort_order", { ascending: true });  // Order by sort_order
+    .eq("user_id", user.id) // RLS does this, but explicit is clearer
+    .order("sort_order", { ascending: true }); // Order by sort_order
 
   // 4. APPLY FILTERS
   if (!include_archived) {
-    query = query.eq("archived", false);  // Exclude archived
+    query = query.eq("archived", false); // Exclude archived
   }
 
   // 5. EXECUTE QUERY
@@ -614,6 +641,7 @@ export async function GET(req: NextRequest) {
 ```
 
 **Calling this endpoint:**
+
 ```bash
 # GET all active categories
 curl -X GET http://localhost:3000/api/categories \
@@ -663,13 +691,15 @@ export async function POST(req: NextRequest) {
   // 5. INSERT NEW CATEGORY
   const { data: created, error: insertError } = await supabase
     .from("categories")
-    .insert([{
-      user_id: user.id,
-      name: body.name,
-      kind: body.kind,
-      sort_order: sort_order,
-      archived: false
-    }])
+    .insert([
+      {
+        user_id: user.id,
+        name: body.name,
+        kind: body.kind,
+        sort_order: sort_order,
+        archived: false,
+      },
+    ])
     .select();
 
   // 6. HANDLE ERRORS
@@ -689,6 +719,7 @@ export async function POST(req: NextRequest) {
 ```
 
 **Calling this endpoint:**
+
 ```bash
 curl -X POST http://localhost:3000/api/categories \
   -H "Content-Type: application/json" \
@@ -717,7 +748,7 @@ curl -X POST http://localhost:3000/api/categories \
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   // 1. AUTHENTICATE
   const auth = await getAuth();
@@ -725,7 +756,7 @@ export async function PATCH(
   const { user, supabase } = auth;
 
   // 2. EXTRACT ROUTE PARAMETER
-  const { id } = await params;  // id = "550e8400-e29b-41d4-a716-446655440000"
+  const { id } = await params; // id = "550e8400-e29b-41d4-a716-446655440000"
 
   // 3. PARSE REQUEST BODY (all fields optional)
   const body = await req.json();
@@ -751,7 +782,7 @@ export async function PATCH(
     .from("categories")
     .update(updates)
     .eq("id", id)
-    .eq("user_id", user.id)  // Ensure user owns this category
+    .eq("user_id", user.id) // Ensure user owns this category
     .select()
     .single();
 
@@ -779,7 +810,7 @@ export async function PATCH(
 ```ts
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   // 1. AUTHENTICATE
   const auth = await getAuth();
@@ -795,7 +826,7 @@ export async function DELETE(
     .from("transactions")
     .select("id", { count: "exact", head: true })
     .eq("category_id", id)
-    .is("deleted_at", null);  // Only count non-deleted
+    .is("deleted_at", null); // Only count non-deleted
 
   if (countError) {
     return error("Failed to check usage", 500);
@@ -806,9 +837,9 @@ export async function DELETE(
     return json(
       {
         error: "Cannot delete category in use",
-        transaction_count: txnCount?.length ?? 0
+        transaction_count: txnCount?.length ?? 0,
       },
-      409  // Conflict
+      409, // Conflict
     );
   }
 
@@ -883,24 +914,26 @@ export async function POST(req: NextRequest) {
   const exchangeResponse = await plaidClient.itemPublicTokenExchange({
     client_id: process.env.PLAID_CLIENT_ID!,
     secret: process.env.PLAID_SECRET!,
-    public_token: public_token
+    public_token: public_token,
   });
 
   const access_token = exchangeResponse.data.access_token;
-  const item_id = exchangeResponse.data.item_id;  // Plaid's item ID
+  const item_id = exchangeResponse.data.item_id; // Plaid's item ID
 
   // 4. STORE ACCESS TOKEN (encrypted in Supabase Vault)
   // For MVP/sandbox, we skip encryption and store plaintext
   const { data: plaidItem, error: insertError } = await supabase
     .from("plaid_items")
-    .insert([{
-      user_id: user.id,
-      access_token: access_token,  // In production: encrypt this
-      institution_id: institution_id,
-      institution_name: institution_name,
-      sync_cursor: null,
-      last_synced_at: null
-    }])
+    .insert([
+      {
+        user_id: user.id,
+        access_token: access_token, // In production: encrypt this
+        institution_id: institution_id,
+        institution_name: institution_name,
+        sync_cursor: null,
+        last_synced_at: null,
+      },
+    ])
     .select()
     .single();
 
@@ -910,22 +943,24 @@ export async function POST(req: NextRequest) {
 
   // 5. FETCH PLAID ACCOUNTS
   const accountsResponse = await plaidClient.accountsGet({
-    access_token: access_token
+    access_token: access_token,
   });
 
   // 6. INSERT ACCOUNTS INTO OUR DATABASE
   const accounts = accountsResponse.data.accounts;
   for (const plaidAccount of accounts) {
-    await supabase.from("accounts").insert([{
-      user_id: user.id,
-      plaid_item_id: plaidItem.id,
-      name: plaidAccount.official_name || plaidAccount.name,
-      type: plaidAccount.subtype,
-      source: "plaid",
-      currency: plaidAccount.balances.iso_currency_code || "USD",
-      current_balance: plaidAccount.balances.current,
-      balance_as_of: new Date().toISOString()
-    }]);
+    await supabase.from("accounts").insert([
+      {
+        user_id: user.id,
+        plaid_item_id: plaidItem.id,
+        name: plaidAccount.official_name || plaidAccount.name,
+        type: plaidAccount.subtype,
+        source: "plaid",
+        currency: plaidAccount.balances.iso_currency_code || "USD",
+        current_balance: plaidAccount.balances.current,
+        balance_as_of: new Date().toISOString(),
+      },
+    ]);
   }
 
   // 7. KICK OFF INITIAL SYNC
@@ -934,23 +969,23 @@ export async function POST(req: NextRequest) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${process.env.INTERNAL_API_TOKEN}`  // Service token
+      Authorization: `Bearer ${process.env.INTERNAL_API_TOKEN}`, // Service token
     },
     body: JSON.stringify({
-      plaid_item_id: plaidItem.id
-    })
+      plaid_item_id: plaidItem.id,
+    }),
   });
 
   // 8. RETURN RESPONSE
   return created({
     plaid_item_id: plaidItem.id,
-    accounts: accounts.map(acc => ({
+    accounts: accounts.map((acc) => ({
       id: acc.account_id,
       name: acc.name,
       type: acc.subtype,
       currency: acc.balances.iso_currency_code || "USD",
-      current_balance: acc.balances.current
-    }))
+      current_balance: acc.balances.current,
+    })),
   });
 }
 ```
@@ -984,7 +1019,7 @@ export async function POST(req: NextRequest) {
   // 4. INCREMENTAL SYNC (using cursor)
   const syncResponse = await plaidClient.transactionsSync({
     access_token: plaidItem.access_token,
-    cursor: plaidItem.sync_cursor  // Start from last sync
+    cursor: plaidItem.sync_cursor, // Start from last sync
   });
 
   const { added, modified, removed, next_cursor } = syncResponse.data;
@@ -1007,7 +1042,7 @@ export async function POST(req: NextRequest) {
       .from("transactions")
       .select("id")
       .eq("account_id", account.id)
-      .eq("amount", -txn.amount)  // Negate Plaid amount
+      .eq("amount", -txn.amount) // Negate Plaid amount
       .gte("txn_date", dayjs(txn.date).subtract(2, "day").format("YYYY-MM-DD"))
       .lte("txn_date", dayjs(txn.date).add(2, "day").format("YYYY-MM-DD"))
       .eq("source", "manual")
@@ -1015,19 +1050,21 @@ export async function POST(req: NextRequest) {
       .limit(1);
 
     // Insert transaction
-    await supabase.from("transactions").insert([{
-      user_id: user.id,
-      account_id: account.id,
-      txn_date: txn.date,
-      amount: -txn.amount,  // ← Negate: Plaid positive = expense, app negative = expense
-      amount_base: -txn.amount,
-      currency: txn.iso_currency_code || "USD",
-      merchant: txn.merchant_name,
-      source: "plaid",
-      plaid_transaction_id: txn.transaction_id,
-      needs_review: !!matchingTxn,  // ← Flag if manual conflict detected
-      pending: txn.pending
-    }]);
+    await supabase.from("transactions").insert([
+      {
+        user_id: user.id,
+        account_id: account.id,
+        txn_date: txn.date,
+        amount: -txn.amount, // ← Negate: Plaid positive = expense, app negative = expense
+        amount_base: -txn.amount,
+        currency: txn.iso_currency_code || "USD",
+        merchant: txn.merchant_name,
+        source: "plaid",
+        plaid_transaction_id: txn.transaction_id,
+        needs_review: !!matchingTxn, // ← Flag if manual conflict detected
+        pending: txn.pending,
+      },
+    ]);
 
     if (matchingTxn) {
       // Also flag the manual transaction
@@ -1043,7 +1080,7 @@ export async function POST(req: NextRequest) {
     .from("plaid_items")
     .update({
       sync_cursor: next_cursor,
-      last_synced_at: new Date().toISOString()
+      last_synced_at: new Date().toISOString(),
     })
     .eq("id", plaidItem.id);
 
@@ -1052,7 +1089,7 @@ export async function POST(req: NextRequest) {
     added: added.length,
     modified: modified.length,
     removed: removed.length,
-    cursor: next_cursor
+    cursor: next_cursor,
   });
 }
 ```
@@ -1066,12 +1103,14 @@ export async function POST(req: NextRequest) {
 **Decision:** Build the app to work 100% without Plaid first, then add bank linking as an optional feature.
 
 **Why:**
+
 - ✅ Faster MVP (no Plaid integration needed first)
 - ✅ Users can start tracking transactions immediately
 - ✅ Plaid is an "accelerator", not core functionality
 - ❌ Manual entry is slower, but 100% flexible
 
 **Implementation:**
+
 - Every transaction has `source: "manual" | "plaid"`
 - Routes accept manual transactions via POST /api/transactions
 - Accounts have `source: "manual" | "plaid"`
@@ -1084,21 +1123,20 @@ export async function POST(req: NextRequest) {
 **Decision:** When user deletes a transaction, don't remove it from the database. Instead, set `deleted_at` timestamp.
 
 **Why:**
+
 - ✅ User can recover accidentally deleted transactions
 - ✅ Audit trail (know what was deleted and when)
 - ✅ No foreign key conflicts (if budget references it)
 - ✅ Comply with regulations (financial data often must be retained)
 
 **Implementation:**
+
 ```ts
 // DELETE /api/transactions/[id]
-await supabase
-  .from("transactions")
-  .update({ deleted_at: now() })
-  .eq("id", id);
+await supabase.from("transactions").update({ deleted_at: now() }).eq("id", id);
 
 // GET /api/transactions (always filter)
-query = query.is("deleted_at", null);  // Only return non-deleted
+query = query.is("deleted_at", null); // Only return non-deleted
 ```
 
 ---
@@ -1108,11 +1146,13 @@ query = query.is("deleted_at", null);  // Only return non-deleted
 **Decision:** When Plaid syncs and finds a manual transaction with the same details, flag both with `needs_review: true`. Let user resolve via UI.
 
 **Why:**
+
 - ✅ Prevents duplicate transactions when user manually enters + Plaid syncs
 - ✅ User has visibility into the conflict
 - ✅ User can choose: merge, keep both, or delete manual
 
 **Implementation:**
+
 ```ts
 // During Plaid sync, check for conflicts
 const { data: matching } = await supabase
@@ -1146,12 +1186,14 @@ if (matching) {
 **Decision:** Implement user data isolation at the database layer, not in application code.
 
 **Why:**
+
 - ✅ Impossible for a bug in the app to leak data (default deny)
 - ✅ Every query is automatically filtered (no chance of forgetting .eq("user_id", user.id))
 - ✅ Works even if someone directly queries the database
 - ✅ Supabase handles it automatically
 
 **Implementation:**
+
 ```sql
 -- Every table has this policy
 CREATE POLICY "users_own_data"
@@ -1166,12 +1208,14 @@ CREATE POLICY "users_own_data"
 **Decision:** Let Supabase auto-generate TypeScript types from the database schema. Re-export them in `lib/db/types.ts`.
 
 **Why:**
+
 - ✅ Type definitions always match the database
 - ✅ Auto-complete in your editor
 - ✅ Catch type errors at compile time
 - ❌ Need to regenerate types after migrations
 
 **Implementation:**
+
 ```bash
 # After migrations, regenerate types
 npx supabase gen types typescript --local > lib/supabase/database.types.ts
@@ -1184,19 +1228,22 @@ npx supabase gen types typescript --local > lib/supabase/database.types.ts
 **Decision:** Store auth tokens in HttpOnly cookies, not in localStorage/headers.
 
 **Why:**
+
 - ✅ XSS attacks can't steal HttpOnly cookies
 - ✅ Automatically included in every request (no manual header setup)
 - ✅ Handles token rotation transparently
 
 **Implementation:**
+
 ```ts
 // lib/supabase/server.ts - reads cookies
 const cookieStore = await cookies();
 const supabase = createServerClient(url, key, {
   cookies: {
     getAll: () => cookieStore.getAll(),
-    setAll: (cookies) => cookies.forEach(c => cookieStore.set(c.name, c.value, c.options))
-  }
+    setAll: (cookies) =>
+      cookies.forEach((c) => cookieStore.set(c.name, c.value, c.options)),
+  },
 });
 ```
 
@@ -1207,11 +1254,13 @@ const supabase = createServerClient(url, key, {
 **Decision:** Instead of storing `actual_amount` on budget_lines, calculate it on-the-fly from transactions.
 
 **Why:**
+
 - ✅ No sync issues (actual always up-to-date)
 - ✅ Simpler schema (no redundant data)
 - ✅ Query is fast (filter by month + user_id)
 
 **Implementation:**
+
 ```ts
 // GET /api/budgets?month=2026-02
 const month = "2026-02";
@@ -1228,9 +1277,9 @@ const { data: txns } = await supabase
 
 // Group by category and sum (in JavaScript)
 const actuals = {};
-txns.forEach(txn => {
+txns.forEach((txn) => {
   if (!actuals[txn.category_id]) actuals[txn.category_id] = 0;
-  actuals[txn.category_id] += Math.abs(txn.amount);  // Use Math.abs for expenses
+  actuals[txn.category_id] += Math.abs(txn.amount); // Use Math.abs for expenses
 });
 ```
 
@@ -1241,11 +1290,13 @@ txns.forEach(txn => {
 **Charlie is a three-tier full-stack app:**
 
 1. **Frontend** (React + Next.js) - NOT BUILT YET
+
    - User interface
    - Form handling
    - Data fetching with TanStack Query
 
 2. **Backend** (Next.js API Routes) - BUILT ✅
+
    - 16 REST endpoints
    - Authentication
    - Business logic
@@ -1257,6 +1308,7 @@ txns.forEach(txn => {
    - Migrations for schema versioning
 
 **Key architecture patterns:**
+
 - ✅ SSR-friendly authentication with HttpOnly cookies
 - ✅ Row-Level Security for data isolation
 - ✅ Soft deletes for audit trails
@@ -1266,4 +1318,4 @@ txns.forEach(txn => {
 
 **Ready to explain to a recruiter/senior engineer:**
 
-*"Charlie is a personal finance web app built with Next.js, React, and Supabase. The backend consists of 16 REST API routes that handle categories, accounts, transactions, budgets, and Plaid bank linking. Authentication uses Supabase's session-based auth with HttpOnly cookies, and data isolation is enforced at the database level using Row-Level Security policies. The frontend (currently being built) will fetch data from these routes and render budgets, transaction lists, and charts. The app prioritizes security (RLS prevents data leaks), scalability (Supabase handles DB scaling), and user flexibility (manual entry + optional Plaid integration)."*
+_"Charlie is a personal finance web app built with Next.js, React, and Supabase. The backend consists of 16 REST API routes that handle categories, accounts, transactions, budgets, and Plaid bank linking. Authentication uses Supabase's session-based auth with HttpOnly cookies, and data isolation is enforced at the database level using Row-Level Security policies. The frontend (currently being built) will fetch data from these routes and render budgets, transaction lists, and charts. The app prioritizes security (RLS prevents data leaks), scalability (Supabase handles DB scaling), and user flexibility (manual entry + optional Plaid integration)."_
