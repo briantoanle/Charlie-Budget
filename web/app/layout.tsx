@@ -1,29 +1,14 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Sans, JetBrains_Mono } from "next/font/google";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Providers } from "@/components/providers";
 import "./globals.css";
 
-const ibmPlexSans = IBM_Plex_Sans({
-  variable: "--font-ibm-plex-sans",
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
-  display: "swap",
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  variable: "--font-jetbrains-mono",
-  subsets: ["latin"],
-  display: "swap",
-});
-
 export const metadata: Metadata = {
   title: {
-    default: "Charlie Budget",
-    template: "%s · Charlie Budget",
+    default: "Charlie Finance Hub",
+    template: "%s · Charlie Finance Hub",
   },
-  description:
-    "Personal budgeting and investment tracking. Connect your bank, categorize spending, set budgets, and grow your wealth.",
+  description: "Modern personal finance dashboard built on Next.js.",
 };
 
 export default function RootLayout({
@@ -32,14 +17,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
-      <body
-        className={`${ibmPlexSans.variable} ${jetbrainsMono.variable} font-sans antialiased`}
-      >
+    <html lang="en">
+      <body className="font-sans antialiased">
         <Providers>
-          <TooltipProvider delayDuration={300}>
-            {children}
-          </TooltipProvider>
+          <TooltipProvider delayDuration={250}>{children}</TooltipProvider>
         </Providers>
       </body>
     </html>

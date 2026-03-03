@@ -496,10 +496,18 @@ export type Database = {
           currency: string
           deleted_at: string | null
           id: string
+          location_address: string | null
+          location_city: string | null
+          location_country: string | null
+          location_lat: number | null
+          location_lon: number | null
+          location_postal_code: string | null
+          location_region: string | null
           merchant: string | null
           needs_review: boolean
           note: string | null
           pending: boolean
+          plaid_category: string | null
           plaid_transaction_id: string | null
           source: string
           txn_date: string
@@ -514,10 +522,18 @@ export type Database = {
           currency?: string
           deleted_at?: string | null
           id?: string
+          location_address?: string | null
+          location_city?: string | null
+          location_country?: string | null
+          location_lat?: number | null
+          location_lon?: number | null
+          location_postal_code?: string | null
+          location_region?: string | null
           merchant?: string | null
           needs_review?: boolean
           note?: string | null
           pending?: boolean
+          plaid_category?: string | null
           plaid_transaction_id?: string | null
           source: string
           txn_date: string
@@ -532,10 +548,18 @@ export type Database = {
           currency?: string
           deleted_at?: string | null
           id?: string
+          location_address?: string | null
+          location_city?: string | null
+          location_country?: string | null
+          location_lat?: number | null
+          location_lon?: number | null
+          location_postal_code?: string | null
+          location_region?: string | null
           merchant?: string | null
           needs_review?: boolean
           note?: string | null
           pending?: boolean
+          plaid_category?: string | null
           plaid_transaction_id?: string | null
           source?: string
           txn_date?: string
@@ -699,4 +723,3 @@ export const Constants = {
     Enums: {},
   },
 } as const
-

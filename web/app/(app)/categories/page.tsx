@@ -200,7 +200,7 @@ export default function CategoriesPage() {
 
   return (
     <PageTransition>
-    <div className="space-y-6">
+    <div className="mx-auto max-w-6xl space-y-6">
       <FadeIn>
       <div className="flex items-center justify-between">
         <div>

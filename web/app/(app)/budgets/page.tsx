@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   useBudget,
   useCategories,
@@ -52,6 +53,7 @@ function formatMonthLabel(monthStr: string) {
 }
 
 export default function BudgetsPage() {
+  const router = useRouter();
   const [currentMonth, setCurrentMonth] = useState(() =>
     getMonthStr(new Date())
   );
@@ -152,7 +154,7 @@ export default function BudgetsPage() {
 
   return (
     <PageTransition>
-      <div className="space-y-6">
+      <div className="mx-auto max-w-6xl space-y-6">
         {/* Header */}
         <FadeIn>
           <div className="flex items-center justify-between">
@@ -272,7 +274,7 @@ export default function BudgetsPage() {
                 <Button
                   variant="link"
                   className="mt-4"
-                  onClick={() => window.location.href = "/categories"}
+                  onClick={() => router.push("/categories")}
                 >
                   Go to Categories page to create custom ones
                 </Button>

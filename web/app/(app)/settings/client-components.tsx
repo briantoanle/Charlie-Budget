@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { DisconnectDialog } from "@/components/accounts/disconnect-dialog";
 import {
-  useProfile,
+  useSuspenseProfile,
   useUpdateProfile,
   useUpdateCurrency,
   useAccounts,
@@ -29,6 +30,8 @@ import {
   User,
   Globe,
   Landmark,
+  ChevronDown,
+  ChevronRight,
   Download,
   Trash2,
   RefreshCw,
@@ -79,7 +82,7 @@ const CURRENCIES = [
 /* ────────────────────────────────────────────────────────────────── */
 
 function ProfileSection() {
-  const { data: profile, isLoading } = useProfile();
+  const { data: profile } = useSuspenseProfile();
   const updateProfile = useUpdateProfile();
   const [name, setName] = useState("");
   const [editing, setEditing] = useState(false);
@@ -96,8 +99,6 @@ function ProfileSection() {
       { onSuccess: () => setEditing(false) }
     );
   };
-
-  if (isLoading) return <Skeleton className="h-32 rounded-lg" />;
 
   return (
     <div className="rounded-lg border border-border bg-card p-5">
@@ -166,7 +167,7 @@ function ProfileSection() {
         <div>
           <Label className="text-xs text-muted-foreground">Account ID</Label>
           <p className="mt-1 font-mono text-xs text-muted-foreground">
-            {profile?.id}
+            {profile?.id || "Not available"}
           </p>
         </div>
       </div>
@@ -192,7 +193,7 @@ function ProfileSection() {
 /* ────────────────────────────────────────────────────────────────── */
 
 function CurrencySection() {
-  const { data: profile, isLoading } = useProfile();
+  const { data: profile } = useSuspenseProfile();
   const updateCurrency = useUpdateCurrency();
   const [selected, setSelected] = useState("");
   const [confirming, setConfirming] = useState(false);
@@ -215,8 +216,6 @@ function CurrencySection() {
       }
     );
   };
-
-  if (isLoading) return <Skeleton className="h-28 rounded-lg" />;
 
   return (
     <div className="rounded-lg border border-border bg-card p-5">
@@ -300,14 +299,12 @@ function CurrencySection() {
 /* ────────────────────────────────────────────────────────────────── */
 
 function CountrySection() {
-  const { data: profile, isLoading } = useProfile();
+  const { data: profile } = useSuspenseProfile();
   const updateProfile = useUpdateProfile();
 
   const handleSelect = (val: string) => {
     updateProfile.mutate({ country: val });
   };
-
-  if (isLoading) return <Skeleton className="h-28 rounded-lg" />;
 
   return (
     <div className="rounded-lg border border-border bg-card p-5">
@@ -354,6 +351,12 @@ function ConnectedAccountsSection() {
   const { data: accounts, isLoading } = useAccounts();
   const syncPlaid = useSyncPlaidItem();
   const deleteAccount = useDeleteAccount();
+  const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
+
+  const [disconnectingItem, setDisconnectingItem] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
 
   const plaidAccounts =
     accounts?.filter((a) => a.source === "plaid" && a.plaid_item_id) ?? [];
@@ -412,9 +415,25 @@ function ConnectedAccountsSection() {
               className="rounded-md border border-border p-3 space-y-2"
             >
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  className="flex min-w-0 items-center gap-2 text-left"
+                  onClick={() =>
+                    setExpandedItemId((prev) =>
+                      prev === item.plaid_item_id ? null : item.plaid_item_id
+                    )
+                  }
+                >
+                  {expandedItemId === item.plaid_item_id ? (
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                  )}
                   <span className="text-sm font-medium">
                     {item.institution_name}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    ({item.accounts.length} account{item.accounts.length === 1 ? "" : "s"})
                   </span>
                   {item.needs_reauth && (
                     <Badge
@@ -424,7 +443,7 @@ function ConnectedAccountsSection() {
                       Re-auth needed
                     </Badge>
                   )}
-                </div>
+                </button>
                 <div className="flex items-center gap-1.5">
                   <Button
                     size="sm"
@@ -446,27 +465,25 @@ function ConnectedAccountsSection() {
                     size="sm"
                     variant="ghost"
                     className="h-7 px-2 text-xs text-muted-foreground hover:text-destructive"
-                    onClick={() => {
-                      if (
-                        confirm(
-                          `Disconnect ${item.institution_name}? This will remove all synced transactions.`
-                        )
-                      ) {
-                        // Delete all accounts under this plaid item
-                        for (const acct of item.accounts) {
-                          deleteAccount.mutate(acct.id);
-                        }
-                      }
-                    }}
+                    onClick={() => setDisconnectingItem({ id: item.plaid_item_id, name: item.institution_name })}
                   >
                     Disconnect
                   </Button>
                 </div>
               </div>
 
-              <div className="text-xs text-muted-foreground">
-                {item.accounts.map((a) => a.name).join(", ")}
-              </div>
+              {expandedItemId === item.plaid_item_id && (
+                <ul className="space-y-1 pl-6">
+                  {item.accounts.map((account) => (
+                    <li
+                      key={account.id}
+                      className="text-xs text-muted-foreground"
+                    >
+                      {account.name}
+                    </li>
+                  ))}
+                </ul>
+              )}
 
               {item.last_synced_at && (
                 <p className="text-[10px] text-muted-foreground">
@@ -488,6 +505,15 @@ function ConnectedAccountsSection() {
         <p className="mt-2 text-xs text-destructive">
           {syncPlaid.error?.message || deleteAccount.error?.message}
         </p>
+      )}
+
+      {disconnectingItem && (
+        <DisconnectDialog
+          open={!!disconnectingItem}
+          onOpenChange={(open) => !open && setDisconnectingItem(null)}
+          plaidItemId={disconnectingItem.id}
+          institutionName={disconnectingItem.name}
+        />
       )}
     </div>
   );

@@ -2,6 +2,10 @@ import { NextRequest } from "next/server";
 import { getAuth } from "@/lib/api/auth";
 import { json, error } from "@/lib/api/response";
 import { plaidClient } from "@/lib/plaid/client";
+import {
+  mapPlaidCategory,
+  getDefaultCategories,
+} from "@/lib/plaid/plaid-category-map";
 
 export async function POST(request: NextRequest) {
   const auth = await getAuth();
@@ -35,6 +39,40 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  // ── Category auto-mapping setup ────────────────────────────────────
+  // Check if user has any categories; if not, seed defaults
+  const { data: existingCategories } = await supabase
+    .from("categories")
+    .select("id, name, kind")
+    .eq("archived", false);
+
+  let userCategories = existingCategories ?? [];
+
+  if (userCategories.length === 0) {
+    // Seed default categories for the user
+    const defaults = getDefaultCategories();
+    const rows = defaults.map((cat, i) => ({
+      user_id: user.id,
+      name: cat.name,
+      kind: cat.kind,
+      sort_order: i,
+    }));
+
+    const { data: seeded } = await supabase
+      .from("categories")
+      .insert(rows)
+      .select("id, name, kind");
+
+    userCategories = seeded ?? [];
+  }
+
+  // Build a lowercase name → id map for matching
+  const categoryNameToId = new Map<string, string>();
+  for (const cat of userCategories) {
+    categoryNameToId.set(cat.name.toLowerCase(), cat.id);
+  }
+
+  // ── Sync loop ──────────────────────────────────────────────────────
   let cursor = plaidItem.cursor ?? undefined;
   let added = 0;
   let modified = 0;
@@ -59,6 +97,13 @@ export async function POST(request: NextRequest) {
         // Our schema: negative = expense, positive = income → negate
         const amount = -(txn.amount);
 
+        // Auto-categorize from Plaid's personal_finance_category
+        const plaidPrimary = txn.personal_finance_category?.primary ?? null;
+        const mapped = mapPlaidCategory(plaidPrimary);
+        const categoryId = mapped
+          ? categoryNameToId.get(mapped.name.toLowerCase()) ?? null
+          : null;
+
         const { error: insertErr } = await supabase
           .from("transactions")
           .insert({
@@ -72,6 +117,15 @@ export async function POST(request: NextRequest) {
             source: "plaid",
             plaid_transaction_id: txn.transaction_id,
             pending: txn.pending,
+            category_id: categoryId,
+            plaid_category: plaidPrimary,
+            location_lat: txn.location?.lat ?? null,
+            location_lon: txn.location?.lon ?? null,
+            location_address: txn.location?.address ?? null,
+            location_city: txn.location?.city ?? null,
+            location_region: txn.location?.region ?? null,
+            location_postal_code: txn.location?.postal_code ?? null,
+            location_country: txn.location?.country ?? null,
           });
 
         // Skip duplicates silently (unique constraint on plaid_transaction_id)
@@ -81,16 +135,46 @@ export async function POST(request: NextRequest) {
       // Process modified transactions
       for (const txn of syncData.modified) {
         const amount = -(txn.amount);
+        const plaidPrimary = txn.personal_finance_category?.primary ?? null;
+
+        // For modified transactions, only auto-categorize if currently uncategorized
+        // (don't overwrite user corrections)
+        const mapped = mapPlaidCategory(plaidPrimary);
+        const autoCategory = mapped
+          ? categoryNameToId.get(mapped.name.toLowerCase()) ?? null
+          : null;
+
+        // Fetch existing to check if user already categorized
+        const { data: existing } = await supabase
+          .from("transactions")
+          .select("category_id")
+          .eq("plaid_transaction_id", txn.transaction_id)
+          .maybeSingle();
+
+        const updatePayload: Record<string, unknown> = {
+          amount,
+          amount_base: amount,
+          merchant: txn.merchant_name ?? txn.name,
+          pending: txn.pending,
+          txn_date: txn.date,
+          plaid_category: plaidPrimary,
+          location_lat: txn.location?.lat ?? null,
+          location_lon: txn.location?.lon ?? null,
+          location_address: txn.location?.address ?? null,
+          location_city: txn.location?.city ?? null,
+          location_region: txn.location?.region ?? null,
+          location_postal_code: txn.location?.postal_code ?? null,
+          location_country: txn.location?.country ?? null,
+        };
+
+        // Only set category if user hasn't manually categorized
+        if (!existing?.category_id && autoCategory) {
+          updatePayload.category_id = autoCategory;
+        }
 
         await supabase
           .from("transactions")
-          .update({
-            amount,
-            amount_base: amount,
-            merchant: txn.merchant_name ?? txn.name,
-            pending: txn.pending,
-            txn_date: txn.date,
-          })
+          .update(updatePayload)
           .eq("plaid_transaction_id", txn.transaction_id);
 
         modified++;

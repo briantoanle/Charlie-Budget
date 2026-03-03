@@ -56,30 +56,10 @@ export async function DELETE(
 
   if (fetchError || !account) return error("Account not found", 404);
 
-  // If Plaid-linked, revoke access token and clean up
-  if (account.source === "plaid" && account.plaid_item_id) {
-    try {
-      const { plaidClient } = await import("@/lib/plaid/client");
-      const accessToken = account.plaid_items?.access_token_enc;
-      if (accessToken) {
-        await plaidClient.itemRemove({ access_token: accessToken });
-      }
-    } catch {
-      // Plaid revocation failure is non-fatal — continue with deletion
-    }
-
-    // Soft-delete all transactions for this account
-    await supabase
-      .from("transactions")
-      .update({ deleted_at: new Date().toISOString() })
-      .eq("account_id", id);
-
-    // Delete the plaid_item
-    await supabase
-      .from("plaid_items")
-      .delete()
-      .eq("id", account.plaid_item_id);
-  }
+  // If Plaid-linked, cleanup is no longer handled here for the item.
+  // It is handled by the unified /api/plaid/items/[id] route.
+  // However, we shouldn't really allow deleting individual plaid accounts while the item is active
+  // without notifying Plaid, but for now we just delete the account from our side.
 
   // Delete the account (FK cascades transactions for manual accounts)
   const { error: deleteError } = await supabase

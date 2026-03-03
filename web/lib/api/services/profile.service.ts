@@ -9,15 +9,19 @@ export class ProfileService extends BaseService {
       .eq("id", this.user.id)
       .single();
 
-    if (error || !data) {
-      if (error?.code !== 'PGRST116') {
+    if (error?.code !== 'PGRST116') {
+      if (error) { // If there's an error and it's not the "not found" error
         throw new Error("Failed to fetch profile");
       }
+    }
+
+    if (!data) { // If no data is found (either due to PGRST116 or genuinely no data)
       return {
-        id: this.user.id,
+        id: this.user.id, // Keep this.user.id as it's consistent with the class context
         display_name: "",
         base_currency: "USD",
-        created_at: new Date().toISOString()
+        country: "US", // Add country
+        created_at: new Date().toISOString(),
       };
     }
 

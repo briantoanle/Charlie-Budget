@@ -30,7 +30,10 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <form action={formAction} className="space-y-4">
+    <form action={formAction} className="space-y-4 text-left">
+      <p className="text-sm text-muted-foreground">
+        Enter your email and we will send reset instructions.
+      </p>
       <div className="space-y-2">
         <Label htmlFor="email">Email</Label>
         <Input
@@ -44,11 +47,9 @@ export default function ForgotPasswordPage() {
         />
       </div>
 
-      {state?.error && (
-        <p className="text-sm text-destructive">{state.error}</p>
-      )}
+      {state?.error && <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">{state.error}</p>}
 
-      <Button type="submit" className="w-full" disabled={isPending}>
+      <Button type="submit" className="h-10 w-full rounded-xl" disabled={isPending}>
         {isPending ? "Sending…" : "Send reset link"}
       </Button>
 

@@ -1,6 +1,13 @@
 "use server";
 
 import { supabaseServer } from "@/lib/supabase/server";
+import {
+  APP_SESSION_COOKIE_NAME,
+  clearSessionCookieOptions,
+  createSessionToken,
+  sessionCookieOptions,
+} from "@/lib/session";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 type AuthState = { error?: string; success?: boolean } | null;
@@ -17,13 +24,19 @@ export async function loginAction(
   }
 
   const supabase = await supabaseServer();
-  const { error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
   });
 
   if (error) {
     return { error: error.message };
+  }
+
+  if (data.user) {
+    const cookieStore = await cookies();
+    const token = await createSessionToken(data.user.id);
+    cookieStore.set(APP_SESSION_COOKIE_NAME, token, sessionCookieOptions());
   }
 
   redirect("/dashboard");
@@ -61,13 +74,19 @@ export async function signupAction(
   }
 
   const supabase = await supabaseServer();
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
   });
 
   if (error) {
     return { error: error.message };
+  }
+
+  if (data.user && data.session) {
+    const cookieStore = await cookies();
+    const token = await createSessionToken(data.user.id);
+    cookieStore.set(APP_SESSION_COOKIE_NAME, token, sessionCookieOptions());
   }
 
   return { success: true };
@@ -98,5 +117,7 @@ export async function forgotPasswordAction(
 export async function signOutAction() {
   const supabase = await supabaseServer();
   await supabase.auth.signOut();
+  const cookieStore = await cookies();
+  cookieStore.set(APP_SESSION_COOKIE_NAME, "", clearSessionCookieOptions());
   redirect("/login");
 }

@@ -1,6 +1,11 @@
 import { NextRequest } from "next/server";
+import { cookies } from "next/headers";
 import { getAuth } from "@/lib/api/auth";
 import { error, noContent } from "@/lib/api/response";
+import {
+  APP_SESSION_COOKIE_NAME,
+  clearSessionCookieOptions,
+} from "@/lib/session";
 
 export async function DELETE(request: NextRequest) {
   const auth = await getAuth();
@@ -69,6 +74,8 @@ export async function DELETE(request: NextRequest) {
 
   // 4. Sign out (invalidate session)
   await supabase.auth.signOut();
+  const cookieStore = await cookies();
+  cookieStore.set(APP_SESSION_COOKIE_NAME, "", clearSessionCookieOptions());
 
   return noContent();
 }

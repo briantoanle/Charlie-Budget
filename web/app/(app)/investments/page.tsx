@@ -63,12 +63,12 @@ import {
 /* ────────────────────────────────────────────────────────────────── */
 
 export default function InvestmentsPage() {
-  const { data: accounts, isLoading: accountsLoading } =
+  const { data: accounts, isLoading: accountsLoading, error: accountsError } =
     useInvestmentAccounts();
 
   return (
     <PageTransition>
-      <div className="space-y-6">
+      <div className="mx-auto max-w-6xl space-y-6">
         <FadeIn>
           <h1 className="text-2xl font-semibold tracking-tight">
             Investments
@@ -80,6 +80,13 @@ export default function InvestmentsPage() {
 
         {accountsLoading ? (
           <Skeleton className="h-64 rounded-lg skeleton-shimmer" />
+        ) : accountsError ? (
+          <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-6 text-center">
+            <p className="text-sm font-medium text-foreground">Could not load investment accounts</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Please try again shortly. If this keeps happening, reconnect your account in Settings.
+            </p>
+          </div>
         ) : !accounts || accounts.length === 0 ? (
           <FadeIn delay={0.15}>
             <EmptyPortfolio />
@@ -209,7 +216,7 @@ function HoldingsTab() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-6xl space-y-6">
       <FadeIn delay={0.1}>
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
@@ -330,14 +337,19 @@ function TradesTab({ accounts }: { accounts: AccountItem[] }) {
   });
 
   const handleSubmit = () => {
-    if (!form.ticker || !form.quantity || !form.price) return;
+    const ticker = form.ticker.trim().toUpperCase();
+    const quantity = parseFloat(form.quantity);
+    const price = parseFloat(form.price);
+    if (!ticker || !Number.isFinite(quantity) || !Number.isFinite(price) || quantity <= 0 || price <= 0) {
+      return;
+    }
     createTrade.mutate(
       {
         account_id: form.account_id,
-        ticker: form.ticker,
+        ticker,
         side: form.side,
-        quantity: parseFloat(form.quantity),
-        price: parseFloat(form.price),
+        quantity,
+        price,
         trade_date: form.trade_date,
       },
       {
@@ -391,7 +403,7 @@ function TradesTab({ accounts }: { accounts: AccountItem[] }) {
                     placeholder="AAPL"
                     value={form.ticker}
                     onChange={(e) =>
-                      setForm((f) => ({ ...f, ticker: e.target.value }))
+                      setForm((f) => ({ ...f, ticker: e.target.value.toUpperCase() }))
                     }
                   />
                 </div>
@@ -418,6 +430,7 @@ function TradesTab({ accounts }: { accounts: AccountItem[] }) {
                     className="mt-1 font-mono"
                     type="number"
                     step="any"
+                    min="0.0001"
                     placeholder="100"
                     value={form.quantity}
                     onChange={(e) =>
@@ -431,6 +444,7 @@ function TradesTab({ accounts }: { accounts: AccountItem[] }) {
                     className="mt-1 font-mono"
                     type="number"
                     step="any"
+                    min="0.0001"
                     placeholder="150.00"
                     value={form.price}
                     onChange={(e) =>
@@ -454,7 +468,14 @@ function TradesTab({ accounts }: { accounts: AccountItem[] }) {
                 <Button
                   size="sm"
                   onClick={handleSubmit}
-                  disabled={createTrade.isPending}
+                  disabled={
+                    createTrade.isPending ||
+                    !form.ticker.trim() ||
+                    !form.quantity ||
+                    !form.price ||
+                    Number(form.quantity) <= 0 ||
+                    Number(form.price) <= 0
+                  }
                 >
                   {createTrade.isPending ? (
                     <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
@@ -573,13 +594,17 @@ function DividendsTab({ accounts }: { accounts: AccountItem[] }) {
   });
 
   const handleSubmit = () => {
-    if (!form.ticker || !form.amount) return;
+    const ticker = form.ticker.trim().toUpperCase();
+    const amount = parseFloat(form.amount);
+    const perShare = form.per_share ? parseFloat(form.per_share) : undefined;
+    if (!ticker || !Number.isFinite(amount) || amount <= 0) return;
+    if (perShare !== undefined && (!Number.isFinite(perShare) || perShare <= 0)) return;
     createDividend.mutate(
       {
         account_id: form.account_id,
-        ticker: form.ticker,
-        amount: parseFloat(form.amount),
-        per_share: form.per_share ? parseFloat(form.per_share) : undefined,
+        ticker,
+        amount,
+        per_share: perShare,
         pay_date: form.pay_date || undefined,
       },
       {
@@ -648,7 +673,7 @@ function DividendsTab({ accounts }: { accounts: AccountItem[] }) {
                     placeholder="AAPL"
                     value={form.ticker}
                     onChange={(e) =>
-                      setForm((f) => ({ ...f, ticker: e.target.value }))
+                      setForm((f) => ({ ...f, ticker: e.target.value.toUpperCase() }))
                     }
                   />
                 </div>
@@ -658,6 +683,7 @@ function DividendsTab({ accounts }: { accounts: AccountItem[] }) {
                     className="mt-1 font-mono"
                     type="number"
                     step="any"
+                    min="0.01"
                     placeholder="45.00"
                     value={form.amount}
                     onChange={(e) =>
@@ -671,6 +697,7 @@ function DividendsTab({ accounts }: { accounts: AccountItem[] }) {
                     className="mt-1 font-mono"
                     type="number"
                     step="any"
+                    min="0.0001"
                     placeholder="0.24"
                     value={form.per_share}
                     onChange={(e) =>
@@ -694,7 +721,13 @@ function DividendsTab({ accounts }: { accounts: AccountItem[] }) {
                 <Button
                   size="sm"
                   onClick={handleSubmit}
-                  disabled={createDividend.isPending}
+                  disabled={
+                    createDividend.isPending ||
+                    !form.ticker.trim() ||
+                    !form.amount ||
+                    Number(form.amount) <= 0 ||
+                    (form.per_share !== "" && Number(form.per_share) <= 0)
+                  }
                 >
                   {createDividend.isPending ? (
                     <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />

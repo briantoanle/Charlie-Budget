@@ -52,7 +52,7 @@ export default function ReportsPage() {
 
   return (
     <PageTransition>
-    <div className="space-y-8">
+    <div className="mx-auto max-w-6xl space-y-8">
       <FadeIn>
         <h1 className="text-2xl font-semibold tracking-tight">Reports</h1>
         <p className="text-sm text-muted-foreground">
