@@ -110,6 +110,8 @@ export default function ReportsPage() {
               {trend.map((point) => {
                 const incPct = (point.income / maxTrendValue) * 100;
                 const spPct = (point.spending / maxTrendValue) * 100;
+                const incWidth = point.income > 0 ? Math.max(incPct, 1) : 0;
+                const spWidth = point.spending > 0 ? Math.max(spPct, 1) : 0;
                 const [y, m] = point.month.split("-");
                 const label = new Date(
                   parseInt(y),
@@ -128,8 +130,11 @@ export default function ReportsPage() {
                     <div className="flex-1 space-y-0.5">
                       <div className="flex items-center gap-2">
                         <div
-                          className="h-3 rounded-sm bg-positive transition-all"
-                          style={{ width: `${incPct}%` }}
+                          className="h-3 rounded-sm transition-all"
+                          style={{
+                            width: `${incWidth}%`,
+                            backgroundColor: "hsl(var(--success, 142 71% 45%))",
+                          }}
                         />
                         <span className="font-mono text-[10px] text-muted-foreground font-tabular">
                           {fmt(point.income)}
@@ -137,8 +142,11 @@ export default function ReportsPage() {
                       </div>
                       <div className="flex items-center gap-2">
                         <div
-                          className="h-3 rounded-sm bg-destructive transition-all"
-                          style={{ width: `${spPct}%` }}
+                          className="h-3 rounded-sm transition-all"
+                          style={{
+                            width: `${spWidth}%`,
+                            backgroundColor: "hsl(var(--destructive, 0 72% 51%))",
+                          }}
                         />
                         <span className="font-mono text-[10px] text-muted-foreground font-tabular">
                           {fmt(point.spending)}
@@ -146,9 +154,13 @@ export default function ReportsPage() {
                       </div>
                     </div>
                     <span
-                      className={`w-16 text-right font-mono text-xs font-medium font-tabular ${
-                        point.net >= 0 ? "text-positive" : "text-destructive"
-                      }`}
+                      className="w-16 text-right font-mono text-xs font-medium font-tabular"
+                      style={{
+                        color:
+                          point.net >= 0
+                            ? "hsl(var(--success, 142 71% 45%))"
+                            : "hsl(var(--destructive, 0 72% 51%))",
+                      }}
                     >
                       {point.net >= 0 ? "+" : ""}
                       {fmt(point.net)}

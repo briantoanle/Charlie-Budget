@@ -77,6 +77,8 @@ export async function POST(request: NextRequest) {
   let added = 0;
   let modified = 0;
   let removed = 0;
+  let skipped = 0;
+  let errors = 0;
   let hasMore = true;
 
   try {
@@ -91,7 +93,10 @@ export async function POST(request: NextRequest) {
       // Process added transactions
       for (const txn of syncData.added) {
         const accountId = accountMap.get(txn.account_id);
-        if (!accountId) continue;
+        if (!accountId) {
+          skipped++;
+          continue;
+        }
 
         // Plaid: positive = debit (expense), negative = credit (income)
         // Our schema: negative = expense, positive = income → negate
@@ -128,8 +133,23 @@ export async function POST(request: NextRequest) {
             location_country: txn.location?.country ?? null,
           });
 
-        // Skip duplicates silently (unique constraint on plaid_transaction_id)
-        if (!insertErr) added++;
+        if (insertErr) {
+          // 23505 = unique_violation (duplicate plaid_transaction_id) — expected
+          if (insertErr.code === "23505") {
+            skipped++;
+          } else {
+            errors++;
+            console.error("Plaid sync insert error:", {
+              code: insertErr.code,
+              message: insertErr.message,
+              details: insertErr.details,
+              hint: insertErr.hint,
+              txn_id: txn.transaction_id,
+            });
+          }
+        } else {
+          added++;
+        }
       }
 
       // Process modified transactions
@@ -203,7 +223,7 @@ export async function POST(request: NextRequest) {
       })
       .eq("id", plaid_item_id);
 
-    return json({ added, modified, removed, cursor: cursor ?? null });
+    return json({ added, modified, removed, skipped, errors, cursor: cursor ?? null });
   } catch (e) {
     console.error("Plaid sync error:", e);
     return error("Failed to sync transactions", 500);

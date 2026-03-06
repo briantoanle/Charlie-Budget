@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { usePlaidLink, type PlaidLinkOnSuccessMetadata } from "react-plaid-link";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
@@ -47,6 +47,9 @@ export function PlaidLinkButton({ onSuccess }: PlaidLinkButtonProps) {
         onSuccess();
       } catch (err) {
         console.error("Token exchange failed:", err);
+      } finally {
+        // Always reset so the next click creates a fresh link token
+        setLinkToken(null);
       }
     },
     [onSuccess]
@@ -55,13 +58,18 @@ export function PlaidLinkButton({ onSuccess }: PlaidLinkButtonProps) {
   const { open, ready } = usePlaidLink({
     token: linkToken,
     onSuccess: onPlaidSuccess,
+    onExit: () => {
+      // Reset on exit/dismiss so the next click creates a fresh token
+      setLinkToken(null);
+    },
   });
 
-  // If we have a link token, open Plaid Link
-  if (linkToken && ready) {
-    // Small delay to let the hook initialize
-    setTimeout(() => open(), 0);
-  }
+  // Auto-open Plaid Link once the token is ready
+  useEffect(() => {
+    if (linkToken && ready) {
+      open();
+    }
+  }, [linkToken, ready, open]);
 
   return (
     <Button

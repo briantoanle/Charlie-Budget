@@ -15,15 +15,6 @@ export async function POST(request: NextRequest) {
   if (!institution_id) return error("institution_id is required", 400);
   if (!institution_name) return error("institution_name is required", 400);
 
-  // Check if institution is already linked by this user
-  const { data: existing } = await supabase
-    .from("plaid_items")
-    .select("id")
-    .eq("institution_id", institution_id)
-    .maybeSingle();
-
-  if (existing) return error("This institution is already linked", 409);
-
   try {
     // Exchange public token for access token
     const exchangeResponse = await plaidClient.itemPublicTokenExchange({
