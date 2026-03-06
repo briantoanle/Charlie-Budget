@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Calendar, X } from "lucide-react";
 import { getUpcomingHolidays, type Holiday } from "@/lib/holidays";
 
@@ -10,15 +10,13 @@ interface HolidayBannerProps {
 }
 
 export function HolidayBanner({ country = "US" }: HolidayBannerProps) {
-  const [dismissed, setDismissed] = useState(false);
-
-  // Check localStorage for dismissed state
-  useEffect(() => {
-    const key = `charlie-holiday-dismissed-${new Date().toISOString().slice(0, 10)}`;
-    if (typeof window !== "undefined" && localStorage.getItem(key)) {
-      setDismissed(true);
+  const [dismissed, setDismissed] = useState(() => {
+    if (typeof window !== "undefined") {
+      const key = `charlie-holiday-dismissed-${new Date().toISOString().slice(0, 10)}`;
+      return !!localStorage.getItem(key);
     }
-  }, []);
+    return false;
+  });
 
   const handleDismiss = () => {
     const key = `charlie-holiday-dismissed-${new Date().toISOString().slice(0, 10)}`;

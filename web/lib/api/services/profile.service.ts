@@ -1,5 +1,5 @@
 import { BaseService } from "./BaseService";
-import { ProfileResponse } from "@/lib/api/hooks";
+import type { ProfileResponse } from "@/lib/api/types";
 
 export class ProfileService extends BaseService {
   async getProfile(): Promise<ProfileResponse> {

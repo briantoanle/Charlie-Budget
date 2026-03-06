@@ -15,7 +15,7 @@ npm install
 npm run dev                 # → http://localhost:3000
 ```
 
-**Test login:** `test@charlie.dev` / `password123`
+**Test login:** `test@charlie.com` / `password123`
 
 ---
 
@@ -90,6 +90,14 @@ npm run dev       # Start dev server (Turbopack)
 npm run build     # Production build (catches TS errors)
 npm run lint      # ESLint
 npm run start     # Serve production build
+npm run test:e2e  # Playwright E2E (reuses saved login)
+```
+
+Before running E2E tests, set the credentials in `.env.local`:
+
+```bash
+E2E_SUPABASE_EMAIL=test@charlie.com
+E2E_SUPABASE_PASSWORD=password123
 ```
 
 ## Docs

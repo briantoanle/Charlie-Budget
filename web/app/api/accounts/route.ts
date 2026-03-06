@@ -20,9 +20,9 @@ export async function GET() {
     const accountService = new AccountService(supabase, user);
     const accounts = await accountService.getAccounts();
     return json({ accounts });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("AccountService GET Error", err);
-    return error(err.message, 500);
+    return error(err instanceof Error ? err.message : "Internal server error", 500);
   }
 }
 export async function POST(request: NextRequest) {
@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     const data = await accountService.createAccount(name, type, currency, current_balance ?? undefined);
     
     return created(data);
-  } catch (err: any) {
-    return error(err.message, 500);
+  } catch (err: unknown) {
+    return error(err instanceof Error ? err.message : "Internal server error", 500);
   }
 }

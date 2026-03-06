@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { Providers } from "@/components/providers";
+import { Providers } from "@/components/providers/query-provider";
 import "./globals.css";
 
 export const metadata: Metadata = {

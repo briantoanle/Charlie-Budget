@@ -8,7 +8,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Archive, Trash2, Loader2 } from "lucide-react";
 import { useDisconnectPlaidItem } from "@/lib/api/hooks";
 

@@ -1,5 +1,25 @@
 import { BaseService } from "./BaseService";
-import { AccountResponse } from "@/lib/api/hooks";
+import type { AccountResponse } from "@/lib/api/types";
+
+interface PlaidItemJoin {
+  institution_name: string | null;
+  needs_reauth: boolean;
+  last_synced_at: string | null;
+}
+
+interface AccountRow {
+  id: string;
+  name: string;
+  type: string;
+  source: string;
+  currency: string;
+  current_balance: number | null;
+  balance_as_of: string | null;
+  plaid_item_id: string | null;
+  archived: boolean;
+  created_at: string;
+  plaid_items: PlaidItemJoin | PlaidItemJoin[] | null;
+}
 
 export class AccountService extends BaseService {
   async getAccounts(): Promise<AccountResponse[]> {
@@ -14,7 +34,7 @@ export class AccountService extends BaseService {
       return [];
     }
 
-    const accounts = (data ?? []).map((row: any) => {
+    const accounts = (data ?? []).map((row: AccountRow) => {
       // Supabase might return single object or array depending on relationship constraint
       const plaidData = Array.isArray(row.plaid_items) ? row.plaid_items[0] : row.plaid_items;
       return {
@@ -37,7 +57,7 @@ export class AccountService extends BaseService {
     return accounts;
   }
 
-  async createAccount(name: string, type: string, currency: string = "USD", current_balance?: number): Promise<any> {
+  async createAccount(name: string, type: string, currency: string = "USD", current_balance?: number): Promise<AccountResponse> {
     const { data, error } = await this.supabase
       .from("accounts")
       .insert({
@@ -56,6 +76,11 @@ export class AccountService extends BaseService {
        throw new Error("Failed to create account");
     }
 
-    return data;
+    return {
+      ...data,
+      institution_name: null,
+      needs_reauth: false,
+      last_synced_at: null,
+    };
   }
 }

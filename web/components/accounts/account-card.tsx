@@ -4,9 +4,10 @@ import { AlertCircle } from "lucide-react";
 
 interface AccountCardProps {
   account: AccountResponse;
+  onClick?: () => void;
 }
 
-export function AccountCard({ account }: AccountCardProps) {
+export function AccountCard({ account, onClick }: AccountCardProps) {
   const balance = account.current_balance
     ? new Intl.NumberFormat("en-US", {
         style: "currency",
@@ -16,7 +17,10 @@ export function AccountCard({ account }: AccountCardProps) {
     : "—";
 
   return (
-    <div className="rounded-lg border border-border bg-card p-5 space-y-3">
+    <div
+      onClick={onClick}
+      className="rounded-lg border border-border bg-card p-5 space-y-3 cursor-pointer transition-colors hover:bg-accent/40 hover:border-border/80"
+    >
       <div className="flex items-start justify-between">
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium">{account.name}</p>

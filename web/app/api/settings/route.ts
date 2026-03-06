@@ -12,7 +12,7 @@ export async function GET() {
     const profileService = new ProfileService(supabase, user);
     const profile = await profileService.getProfile();
     return json({ profile });
-  } catch (err: any) {
-    return error(err.message, 404);
+  } catch (err: unknown) {
+    return error(err instanceof Error ? err.message : "Not found", 404);
   }
 }

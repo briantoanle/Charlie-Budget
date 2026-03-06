@@ -1,8 +1,10 @@
 import { test, expect } from '@playwright/test';
 
+test.use({ storageState: { cookies: [], origins: [] } });
+
 test.describe('Signup Page', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('http://localhost:3000/signup');
+    await page.goto('/signup');
   });
 
   test('should show validation errors for empty fields', async ({ page }) => {

@@ -1,7 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { useAccounts } from "@/lib/api/hooks";
+import type { AccountResponse } from "@/lib/api/hooks";
 import { AccountCard } from "@/components/accounts/account-card";
+import { AccountTransactionsModal } from "@/components/accounts/account-transactions-modal";
 import { PlaidLinkButton } from "@/components/accounts/plaid-link-button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Landmark } from "lucide-react";
@@ -15,6 +18,7 @@ import {
 
 export default function AccountsPage() {
   const { data: accounts, isLoading, refetch } = useAccounts();
+  const [selectedAccount, setSelectedAccount] = useState<AccountResponse | null>(null);
 
   return (
     <PageTransition>
@@ -44,7 +48,10 @@ export default function AccountsPage() {
             {accounts.map((account) => (
               <StaggerItem key={account.id}>
                 <CardHover>
-                  <AccountCard account={account} />
+                  <AccountCard
+                    account={account}
+                    onClick={() => setSelectedAccount(account)}
+                  />
                 </CardHover>
               </StaggerItem>
             ))}
@@ -66,6 +73,12 @@ export default function AccountsPage() {
           </FadeIn>
         )}
       </div>
+
+      <AccountTransactionsModal
+        account={selectedAccount}
+        open={!!selectedAccount}
+        onClose={() => setSelectedAccount(null)}
+      />
     </PageTransition>
   );
 }

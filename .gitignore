@@ -1,4 +1,11 @@
+# misc
+.DS_Store
+node_modules/
+
+# agents
 agent.md
 .agents/rules/total-guide.md
+
+# test files (local only)
 web/tests/plaid-routes.test.ts
 web/tests/plaid-sandbox.test.ts

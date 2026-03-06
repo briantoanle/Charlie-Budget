@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -11,7 +12,6 @@ import {
   Map,
   Settings,
   LogOut,
-  Wallet,
 } from "lucide-react";
 import {
   Sidebar,
@@ -50,9 +50,13 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" className="border-r-0">
       <SidebarHeader className="p-4 pb-6">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary">
-            <Wallet className="h-4 w-4 text-primary-foreground" />
-          </div>
+          <Image
+            src="/charlie-logo.svg"
+            alt="Charlie logo"
+            width={32}
+            height={32}
+            className="h-8 w-8 rounded-xl"
+          />
           {!collapsed && (
             <span className="text-base font-semibold tracking-tight text-foreground">
               Charlie

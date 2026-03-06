@@ -5,7 +5,7 @@
 -- =============================================================================
 
 -- Create a test user directly in auth.users
--- Email: test@charlie.dev  |  Password: password123
+-- Email: test@charlie.com  |  Password: password123
 insert into auth.users (
   instance_id,
   id,
@@ -24,7 +24,7 @@ insert into auth.users (
 ) values (
   '00000000-0000-0000-0000-000000000000',   -- required: GoTrue filters on this
   '00000000-0000-0000-0000-000000000001',
-  'test@charlie.dev',
+  'test@charlie.com',
   crypt('password123', gen_salt('bf')),
   now(),
   '{"provider":"email","providers":["email"]}',
@@ -57,7 +57,7 @@ insert into auth.identities (
   '00000000-0000-0000-0000-000000000001',
   '00000000-0000-0000-0000-000000000001',
   '00000000-0000-0000-0000-000000000001',
-  '{"sub":"00000000-0000-0000-0000-000000000001","email":"test@charlie.dev"}',
+  '{"sub":"00000000-0000-0000-0000-000000000001","email":"test@charlie.com"}',
   'email',
   now(),
   now(),

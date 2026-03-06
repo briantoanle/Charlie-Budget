@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Settings Page Forms', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('http://localhost:3000/settings');
+    await page.goto('/settings');
   });
 
   test('should handle profile name editing', async ({ page }) => {

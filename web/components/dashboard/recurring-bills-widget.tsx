@@ -1,10 +1,9 @@
 "use client";
 
 import { useTransactions } from "@/lib/api/hooks";
-import { 
-  StaggerList, 
-  StaggerItem,
-  AnimatedNumber
+import {
+  StaggerList,
+  StaggerItem
 } from "@/components/ui/motion-primitives";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Clock, CalendarDays, CheckCircle2 } from "lucide-react";
@@ -24,12 +23,13 @@ export function RecurringBillsWidget() {
   const { data: txnData, isLoading } = useTransactions({ per_page: 200 });
 
   const bills = useMemo(() => {
-    if (!txnData?.data) return [];
+    const txns = txnData?.pages?.flatMap((p) => p.data);
+    if (!txns?.length) return [];
 
     // SIMPLE PATTERN DETECTION
     // Groups transactions by merchant and checks for regular intervals
-    const groups: Record<string, any[]> = {};
-    txnData.data.forEach(t => {
+    const groups: Record<string, typeof txns> = {};
+    txns.forEach(t => {
       if (t.amount < 0) {
         if (!groups[t.merchant || "Unknown"]) groups[t.merchant || "Unknown"] = [];
         groups[t.merchant || "Unknown"].push(t);

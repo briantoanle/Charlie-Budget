@@ -1,8 +1,10 @@
 import { test, expect } from '@playwright/test';
 
+test.use({ storageState: { cookies: [], origins: [] } });
+
 test.describe('Login Page', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('http://localhost:3000/login');
+    await page.goto('/login');
   });
 
   test('should show validation errors for empty fields', async ({ page }) => {
@@ -24,11 +26,9 @@ test.describe('Login Page', () => {
   });
 
   test('should allow submission with valid credentials', async ({ page }) => {
-    // We mock the response if needed, but here we just check if it attempts to submit
-    await page.fill('input[name="email"]', 'test@example.com');
+    await page.fill('input[name="email"]', 'test@charlie.com');
     await page.fill('input[name="password"]', 'password123');
-    
-    // We're just testing the UI interaction here
+
     await expect(page.locator('button[type="submit"]')).toBeEnabled();
   });
 });

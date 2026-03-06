@@ -53,7 +53,7 @@ export function PortfolioBreakdown() {
               fontSize: "12px"
             }}
             itemStyle={{ color: "hsl(var(--foreground))" }}
-            formatter={(value: any) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(value))}
+            formatter={(value: number | string | undefined) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(value ?? 0))}
           />
           <Legend iconType="circle" wrapperStyle={{ fontSize: '10px' }} />
         </PieChart>

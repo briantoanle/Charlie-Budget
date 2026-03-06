@@ -11,15 +11,9 @@ import {
   ArrowUpRight,
 } from "lucide-react";
 import { useSuspenseAccounts, useSuspenseTransactions } from "@/lib/api/hooks";
+import { formatMoney } from "@/lib/utils";
 import { MonthlyTrendChart } from "@/components/dashboard/monthly-trend-chart";
 import { CategoryComparisonChart } from "@/components/dashboard/category-comparison-chart";
-
-function formatMoney(value: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(value);
-}
 
 export default function DashboardPage() {
   const { data: accounts } = useSuspenseAccounts();

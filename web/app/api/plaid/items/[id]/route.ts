@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { getAuth } from "@/lib/api/auth";
-import { json, error, noContent } from "@/lib/api/response";
+import { error, noContent } from "@/lib/api/response";
 
 export async function DELETE(
   request: NextRequest,

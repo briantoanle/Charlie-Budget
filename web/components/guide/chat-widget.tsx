@@ -55,7 +55,7 @@ export function ChatWidget() {
             {messages.length === 0 && (
               <div className="flex flex-col items-center justify-center h-full text-center space-y-3 text-muted-foreground">
                 <Bot className="h-8 w-8 opacity-20" />
-                <p className="text-sm">Hi! I'm Charlie's interactive guide.<br/>How can I help you today?</p>
+                <p className="text-sm">Hi! I&apos;m Charlie&apos;s interactive guide.<br/>How can I help you today?</p>
               </div>
             )}
             

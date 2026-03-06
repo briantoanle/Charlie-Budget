@@ -16,7 +16,7 @@ export function UncategorizedTransactions() {
   const { data: categories } = useCategories();
   const updateTxn = useUpdateTransaction();
 
-  const uncategorized = txnData?.data ?? [];
+  const uncategorized = txnData?.pages?.[0]?.data ?? [];
 
   if (uncategorized.length === 0) return null;
 

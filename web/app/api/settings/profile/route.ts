@@ -10,7 +10,7 @@ export async function PATCH(request: NextRequest) {
   const body = await request.json();
   const { display_name, country } = body;
 
-  const updates: any = {};
+  const updates: Record<string, unknown> = {};
 
   if (display_name !== undefined) {
     if (typeof display_name !== "string" || !display_name.trim()) {

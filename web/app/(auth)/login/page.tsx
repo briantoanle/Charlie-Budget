@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,11 +9,12 @@ import { loginAction } from "@/lib/actions/auth";
 
 export default function LoginPage() {
   const [state, formAction, isPending] = useActionState(loginAction, null);
+  const [email, setEmail] = useState("");
 
   return (
     <form action={formAction} className="space-y-6 text-left">
       <header className="space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[hsl(198_56%_34%)]">
           Welcome back
         </p>
         <h2 className="text-3xl font-semibold leading-tight tracking-tight text-foreground">
@@ -36,7 +37,9 @@ export default function LoginPage() {
           required
           autoComplete="email"
           autoFocus
-          className="h-12 rounded-2xl border-foreground/15 bg-white/80 px-4"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="h-12 rounded-2xl border-foreground/15 bg-white px-4"
         />
       </div>
 
@@ -59,7 +62,7 @@ export default function LoginPage() {
           placeholder="Enter your password"
           required
           autoComplete="current-password"
-          className="h-12 rounded-2xl border-foreground/15 bg-white/80 px-4"
+          className="h-12 rounded-2xl border-foreground/15 bg-white px-4"
         />
       </div>
 
@@ -71,7 +74,7 @@ export default function LoginPage() {
 
       <Button
         type="submit"
-        className="h-12 w-full rounded-2xl bg-[linear-gradient(120deg,hsl(var(--foreground))_0%,hsl(var(--foreground)/0.86)_100%)] text-background hover:opacity-95"
+        className="h-12 w-full rounded-2xl bg-[linear-gradient(120deg,hsl(198_30%_16%)_0%,hsl(198_27%_22%)_55%,hsl(28_77%_52%)_100%)] text-white shadow-[0_14px_32px_-18px_hsl(26_68%_45%/0.7)] hover:opacity-95"
         disabled={isPending}
       >
         {isPending ? "Signing in…" : "Sign in"}

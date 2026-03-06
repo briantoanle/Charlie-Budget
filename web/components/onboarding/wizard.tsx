@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useProfile, useUpdateProfile } from "@/lib/api/hooks";
+import { useProfile, useUpdateProfile, useUpdateCurrency } from "@/lib/api/hooks";
 import { PlaidLinkButton } from "@/components/accounts/plaid-link-button";
 import {
   Select,
@@ -20,26 +20,31 @@ import { useRouter } from "next/navigation";
 export function OnboardingWizard() {
   const { data: profile, isLoading } = useProfile();
   const updateProfile = useUpdateProfile();
+  const updateCurrency = useUpdateCurrency();
   const router = useRouter();
 
-  const [open, setOpen] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
   const [step, setStep] = useState(1);
   const [name, setName] = useState("");
   const [currency, setCurrency] = useState("USD");
+  const [notSkipped] = useState(
+    () => typeof window !== "undefined" && !localStorage.getItem("charlie_onboarding_skipped")
+  );
 
-  useEffect(() => {
-    if (!isLoading && profile) {
-      if (!profile.display_name && !localStorage.getItem("charlie_onboarding_skipped")) {
-        setOpen(true);
-      }
-    }
-  }, [profile, isLoading]);
+  // Derive open state from profile data and localStorage (checked once via lazy init)
+  const open =
+    !dismissed &&
+    !isLoading &&
+    !!profile &&
+    !profile.display_name &&
+    notSkipped;
 
   if (!open) return null;
 
   const handleNext = () => {
     if (step === 1 && name.trim()) {
-      updateProfile.mutate({ display_name: name.trim(), base_currency: currency } as any);
+      updateProfile.mutate({ display_name: name.trim() });
+      updateCurrency.mutate({ currency });
       setStep(2);
     } else {
         setStep(2);
@@ -48,11 +53,11 @@ export function OnboardingWizard() {
 
   const handleSkip = () => {
     localStorage.setItem("charlie_onboarding_skipped", "true");
-    setOpen(false);
+    setDismissed(true);
   };
 
   const handleFinish = () => {
-    setOpen(false);
+    setDismissed(true);
     router.refresh();
   };
 
@@ -76,7 +81,7 @@ export function OnboardingWizard() {
                   Welcome to Charlie 👋
                 </h2>
                 <p className="text-muted-foreground text-sm">
-                  Let's get things set up. What should we call you?
+                  Let&apos;s get things set up. What should we call you?
                 </p>
               </div>
 
@@ -128,7 +133,7 @@ export function OnboardingWizard() {
                   Connect your bank 🏦
                 </h2>
                 <p className="text-muted-foreground text-sm">
-                  Charlie shines when it automatically pulls in your transactions and categorizes them for you. Let's securely connect your primary account.
+                  Charlie shines when it automatically pulls in your transactions and categorizes them for you. Let&apos;s securely connect your primary account.
                 </p>
               </div>
 
@@ -145,7 +150,7 @@ export function OnboardingWizard() {
                   Back
                 </Button>
                 <Button variant="ghost" size="sm" onClick={handleFinish}>
-                  I'll do this later
+                  I&apos;ll do this later
                 </Button>
               </div>
             </div>

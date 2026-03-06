@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Local-only test files (gitignored)
+    "tests/plaid-routes.test.ts",
+    "tests/plaid-sandbox.test.ts",
   ]),
 ]);
 
