@@ -438,35 +438,19 @@ function FiltersCard(props: {
 
   return (
     <Card className="overflow-hidden">
-      <CardContent className="grid items-start gap-4 py-5 lg:grid-cols-2 2xl:grid-cols-[minmax(360px,1.8fr)_minmax(220px,0.8fr)_minmax(220px,0.8fr)_16rem]">
-        <div className="min-w-0 rounded-2xl border border-border/70 bg-muted/20 p-4 2xl:min-w-[360px] 2xl:shrink-0">
+      <CardContent className="grid items-start gap-4 py-5 xl:grid-cols-[minmax(0,1.55fr)_minmax(360px,0.95fr)]">
+        <div className="min-w-0 rounded-2xl border border-border/70 bg-muted/20 p-4">
           <div className="flex flex-col gap-3">
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-              <div className="min-w-0 flex-1 space-y-2">
-                <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                  <CalendarRange className="size-3.5" />
-                  <span>Reporting Window</span>
-                </div>
-                <DateRangePicker
-                  value={props.dateRange}
-                  onChange={props.onDateRangeChange}
-                  presets={calendarPresets}
-                  className="min-w-0 2xl:min-w-[360px]"
-                />
-              </div>
-              <div className="space-y-2 lg:min-w-[210px]">
-                <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                  Compare
-                </p>
-                <Button
-                  variant={props.compareMode ? "default" : "outline"}
-                  className="w-full justify-center"
-                  onClick={props.onCompareModeChange}
-                >
-                  {props.compareMode ? "Previous period on" : "Previous period off"}
-                </Button>
-              </div>
+            <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+              <CalendarRange className="size-3.5" />
+              <span>Reporting Window</span>
             </div>
+            <DateRangePicker
+              value={props.dateRange}
+              onChange={props.onDateRangeChange}
+              presets={calendarPresets}
+              className="min-w-0 max-w-2xl"
+            />
             <div className="flex flex-wrap gap-2">
               {REPORTING_WINDOW_PRESETS.map((preset) => {
                 const active = isSameRangeValue(props.dateRange, getPresetRange(preset.key));
@@ -486,44 +470,57 @@ function FiltersCard(props: {
             </div>
           </div>
         </div>
-        <FilterField label="Account">
-          <Select value={props.accountId} onValueChange={props.onAccountChange}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All accounts</SelectItem>
-              {props.accounts.map((account) => (
-                <SelectItem key={account.id} value={account.id}>
-                  {account.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </FilterField>
-        <FilterField label="Focus">
-          <Select value={props.focusKind} onValueChange={(value) => props.onFocusKindChange(value as CategoryKind)}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="expense">Expenses</SelectItem>
-              <SelectItem value="income">Income</SelectItem>
-            </SelectContent>
-          </Select>
-        </FilterField>
-        <div className="flex flex-col gap-3 self-start rounded-2xl border border-border/70 bg-card/80 p-4 shadow-sm lg:col-span-2 2xl:col-span-1">
-          <div className="space-y-2">
-            <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
-              Drill-down
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Month and category selections stack here until you reset them.
-            </p>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <FilterField label="Compare">
+            <Button
+              variant={props.compareMode ? "default" : "outline"}
+              className="w-full justify-center"
+              onClick={props.onCompareModeChange}
+            >
+              {props.compareMode ? "Previous period on" : "Previous period off"}
+            </Button>
+          </FilterField>
+          <FilterField label="Account">
+            <Select value={props.accountId} onValueChange={props.onAccountChange}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All accounts</SelectItem>
+                {props.accounts.map((account) => (
+                  <SelectItem key={account.id} value={account.id}>
+                    {account.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FilterField>
+          <FilterField label="Focus">
+            <Select value={props.focusKind} onValueChange={(value) => props.onFocusKindChange(value as CategoryKind)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="expense">Expenses</SelectItem>
+                <SelectItem value="income">Income</SelectItem>
+              </SelectContent>
+            </Select>
+          </FilterField>
+          <div className="rounded-2xl border border-border/70 bg-card/80 p-4 shadow-sm sm:col-span-2">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="space-y-1">
+                <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                  Drill-down
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Reset month and category selections.
+                </p>
+              </div>
+              <Button variant="outline" onClick={props.onResetDrilldown} className="w-full sm:w-auto">
+                Reset drill-down
+              </Button>
+            </div>
           </div>
-          <Button variant="outline" onClick={props.onResetDrilldown} className="w-full justify-center">
-            Reset drill-down
-          </Button>
         </div>
       </CardContent>
     </Card>
