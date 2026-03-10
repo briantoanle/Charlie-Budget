@@ -11,6 +11,7 @@ export async function GET(request: NextRequest) {
   const start_date = sp.get("start_date");
   const end_date = sp.get("end_date");
   const kind = sp.get("kind") ?? "expense";
+  const account_id = sp.get("account_id");
 
   if (!start_date) return error("start_date is required", 400);
   if (!end_date) return error("end_date is required", 400);
@@ -18,13 +19,19 @@ export async function GET(request: NextRequest) {
     return error("kind must be expense or income", 400);
   }
 
-  const { data: txns, error: dbError } = await supabase
+  let query = supabase
     .from("transactions")
     .select("amount_base, category_id, categories(name, kind)")
     .is("deleted_at", null)
     .eq("pending", false)
     .gte("txn_date", start_date)
     .lte("txn_date", end_date);
+
+  if (account_id) {
+    query = query.eq("account_id", account_id);
+  }
+
+  const { data: txns, error: dbError } = await query;
 
   if (dbError) return error("Failed to fetch category breakdown", 500);
 

@@ -18,6 +18,7 @@ export function useTransactions(params: {
   start_date?: string;
   end_date?: string;
   search?: string;
+  kind?: string;
 }) {
   return useInfiniteQuery<TransactionPage>({
     queryKey: ["transactions", params],
@@ -40,6 +41,7 @@ export function useSuspenseTransactions(params: {
   start_date?: string;
   end_date?: string;
   search?: string;
+  kind?: string;
 }) {
   const qs = buildSearchParams(params);
   return useSuspenseQuery({

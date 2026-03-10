@@ -49,7 +49,7 @@ export default function SpendingMapPage() {
   const hasIncompleteDateRange = Boolean(filters.start_date) !== Boolean(filters.end_date);
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
+    <div className="mx-auto flex min-h-full max-w-7xl flex-1 flex-col gap-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">Spending Map</h1>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -175,37 +175,49 @@ export default function SpendingMapPage() {
         </div>
       )}
 
-      <div className="glass-card overflow-hidden rounded-2xl border border-border/60 bg-card p-4">
+      <div className="glass-card flex min-h-[400px] flex-1 flex-col overflow-hidden rounded-2xl border border-border/60 bg-white p-4 shadow-sm">
         {isLoading ? (
-          <div className="py-16 text-center text-sm text-muted-foreground">Loading map...</div>
+          <div className="flex flex-1 items-center justify-center text-center text-sm text-muted-foreground">
+            Loading map...
+          </div>
         ) : error ? (
-          <div className="py-16 text-center text-sm text-muted-foreground">
+          <div className="flex flex-1 items-center justify-center text-center text-sm text-muted-foreground">
             Map preview is temporarily unavailable.
           </div>
         ) : (
-          <div className="space-y-4">
-            <div className="w-full overflow-x-auto">
+          <div className="flex flex-1 flex-col gap-4">
+            <div className="flex min-h-[340px] flex-1 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-[radial-gradient(circle_at_top,#eff6ff,transparent_38%),linear-gradient(135deg,#f8fafc_0%,#eef2ff_100%)] p-4">
               <svg
                 viewBox={`0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`}
-                className="h-[460px] min-w-[840px] w-full rounded-xl border border-border/60 bg-gradient-to-b from-sky-50 to-blue-100"
+                className="h-full min-h-[340px] w-full rounded-xl bg-[linear-gradient(to_right,rgba(148,163,184,0.14)_1px,transparent_1px),linear-gradient(to_bottom,rgba(148,163,184,0.14)_1px,transparent_1px),radial-gradient(circle_at_center,rgba(255,255,255,0.95),rgba(226,232,240,0.8))] bg-[size:40px_40px,40px_40px,100%_100%]"
                 role="img"
                 aria-label="Spending hotspots world map"
               >
+                <defs>
+                  <filter id="hotspot-glow">
+                    <feGaussianBlur stdDeviation="6" result="coloredBlur" />
+                    <feMerge>
+                      <feMergeNode in="coloredBlur" />
+                      <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                  </filter>
+                </defs>
                 {Array.from({ length: 11 }).map((_, i) => {
                   const y = (i / 10) * MAP_HEIGHT;
-                  return <line key={`lat-${i}`} x1={0} y1={y} x2={MAP_WIDTH} y2={y} stroke="#9CA3AF" opacity="0.18" />;
+                  return <line key={`lat-${i}`} x1={0} y1={y} x2={MAP_WIDTH} y2={y} stroke="#94a3b8" opacity="0.12" />;
                 })}
                 {Array.from({ length: 13 }).map((_, i) => {
                   const x = (i / 12) * MAP_WIDTH;
-                  return <line key={`lon-${i}`} x1={x} y1={0} x2={x} y2={MAP_HEIGHT} stroke="#9CA3AF" opacity="0.18" />;
+                  return <line key={`lon-${i}`} x1={x} y1={0} x2={x} y2={MAP_HEIGHT} stroke="#94a3b8" opacity="0.12" />;
                 })}
+                <rect x="1" y="1" width={MAP_WIDTH - 2} height={MAP_HEIGHT - 2} rx="20" fill="transparent" stroke="rgba(148,163,184,0.28)" />
 
                 {data?.hotspots.map((spot) => {
                   const { x, y } = project(spot.lon, spot.lat);
                   const radius = markerScale(spot.total_spend);
                   return (
-                    <g key={spot.key}>
-                      <circle cx={x} cy={y} r={radius} fill="#ef4444" opacity="0.22" />
+                    <g key={spot.key} filter="url(#hotspot-glow)">
+                      <circle cx={x} cy={y} r={radius} fill="#ef4444" opacity="0.14" />
                       <circle cx={x} cy={y} r={Math.max(3, radius * 0.35)} fill="#dc2626">
                         <title>
                           {spot.label} | ${spot.total_spend.toFixed(2)} | {spot.transactions_count} txns

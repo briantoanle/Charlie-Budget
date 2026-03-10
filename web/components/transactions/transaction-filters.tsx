@@ -1,5 +1,6 @@
 import type { AccountResponse, CategoryResponse } from "@/lib/api/hooks";
 import { Input } from "@/components/ui/input";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 import {
   Select,
   SelectContent,
@@ -83,19 +84,16 @@ export function TransactionFilters({
       </Select>
 
       {/* Date range */}
-      <Input
-        type="date"
-        value={filters.start_date}
-        onChange={(e) => onChange({ start_date: e.target.value })}
-        className="w-[150px]"
-        placeholder="From"
-      />
-      <Input
-        type="date"
-        value={filters.end_date}
-        onChange={(e) => onChange({ end_date: e.target.value })}
-        className="w-[150px]"
-        placeholder="To"
+      <DateRangePicker
+        className="min-w-[260px] flex-1"
+        value={{
+          startDate: filters.start_date,
+          endDate: filters.end_date,
+        }}
+        onChange={({ startDate, endDate }) =>
+          onChange({ start_date: startDate, end_date: endDate })
+        }
+        placeholder="Select range"
       />
     </div>
   );

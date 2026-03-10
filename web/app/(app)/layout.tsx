@@ -15,8 +15,8 @@ export default function AppLayout({
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset>
-        <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center border-b border-border/50 bg-card/50 px-4 backdrop-blur-md">
+      <SidebarInset className="bg-gray-50">
+        <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center border-b border-border/50 bg-gray-50/90 px-4 backdrop-blur-md">
           <SidebarTrigger className="hidden text-muted-foreground hover:text-foreground md:flex" />
           <div className="ml-auto flex items-center gap-3">
             <div
@@ -27,7 +27,9 @@ export default function AppLayout({
             </div>
           </div>
         </header>
-        <main className="page-content flex-1 overflow-y-auto p-4 pb-20 md:p-6 md:pb-6">{children}</main>
+        <main className="page-content flex flex-1 flex-col overflow-y-auto bg-gray-50 p-4 pb-20 md:p-6 md:pb-6">
+          {children}
+        </main>
       </SidebarInset>
       <MobileNav />
       <CommandPalette />

@@ -5,6 +5,12 @@ export type { BudgetResponse, BudgetLineResponse } from "./budgets";
 export type {
   MonthlyTrendPoint,
   CategoryBreakdownItem,
+  ReportSummary,
+  ReportSummaryCategory,
+  ReportSummaryMetricDelta,
+  ReportFlowNode,
+  ReportFlowLink,
+  ReportSpendingFlow,
   SpendHotspot,
   SpendMapResponse,
 } from "./reports";

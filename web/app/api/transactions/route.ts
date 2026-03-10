@@ -16,6 +16,7 @@ export async function GET(request: NextRequest) {
   const end_date = sp.get("end_date");
   const search = sp.get("search");
   const pending = sp.get("pending");
+  const kind = sp.get("kind");
 
   let query = supabase
     .from("transactions")
@@ -32,6 +33,8 @@ export async function GET(request: NextRequest) {
   }
   if (start_date) query = query.gte("txn_date", start_date);
   if (end_date) query = query.lte("txn_date", end_date);
+  if (kind === "expense") query = query.lt("amount_base", 0);
+  if (kind === "income") query = query.gt("amount_base", 0);
   if (search) {
     query = query.or(`merchant.ilike.%${search}%,note.ilike.%${search}%`);
   }

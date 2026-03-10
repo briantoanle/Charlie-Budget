@@ -9,6 +9,7 @@ import { useTransactions, useAccounts } from "@/lib/api/hooks";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { Search, ArrowUpRight, ArrowDownLeft, Plus, Loader2, X } from "lucide-react";
 import { AddTransactionModal } from "@/components/dashboard/add-transaction-modal";
 
@@ -138,23 +139,21 @@ export default function TransactionsPage() {
           />
         </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <div className="space-y-1">
-            <label className="text-xs text-muted-foreground">From</label>
-            <Input
-              type="date"
-              value={filters.start_date}
-              onChange={(e) => setFilters((prev) => ({ ...prev, start_date: e.target.value }))}
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs text-muted-foreground">To</label>
-            <Input
-              type="date"
-              value={filters.end_date}
-              onChange={(e) => setFilters((prev) => ({ ...prev, end_date: e.target.value }))}
-            />
-          </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_220px]">
+          <DateRangePicker
+            value={{
+              startDate: filters.start_date,
+              endDate: filters.end_date,
+            }}
+            onChange={({ startDate, endDate }) =>
+              setFilters((prev) => ({
+                ...prev,
+                start_date: startDate,
+                end_date: endDate,
+              }))
+            }
+            placeholder="Filter by settlement date"
+          />
           <div className="flex items-end">
             <Button
               variant="outline"

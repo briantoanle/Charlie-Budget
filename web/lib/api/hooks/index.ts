@@ -45,7 +45,12 @@ export {
 
 export { useSyncPlaidItem, useDisconnectPlaidItem } from "./plaid";
 
-export { useMonthlyTrend, useCategoryBreakdown } from "./reports";
+export {
+  useMonthlyTrend,
+  useCategoryBreakdown,
+  useReportSummary,
+  useReportSpendingFlow,
+} from "./reports";
 
 export {
   useInvestmentAccounts,
@@ -67,6 +72,12 @@ export type {
   BudgetLineResponse,
   MonthlyTrendPoint,
   CategoryBreakdownItem,
+  ReportSummary,
+  ReportSummaryCategory,
+  ReportSummaryMetricDelta,
+  ReportFlowNode,
+  ReportFlowLink,
+  ReportSpendingFlow,
   SpendHotspot,
   SpendMapResponse,
   SavingsGoalResponse,

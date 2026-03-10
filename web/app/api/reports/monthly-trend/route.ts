@@ -6,6 +6,19 @@ function monthKey(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 }
 
+function formatDate(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
+    date.getDate()
+  ).padStart(2, "0")}`;
+}
+
+function parseDate(value: string | null): Date | null {
+  if (!value) return null;
+  const [year, month, day] = value.split("-").map(Number);
+  if (!year || !month || !day) return null;
+  return new Date(year, month - 1, day);
+}
+
 export async function GET(request: NextRequest) {
   const auth = await getAuth();
   if (auth.error) return auth.error;
@@ -15,15 +28,27 @@ export async function GET(request: NextRequest) {
   const months = Number.isFinite(rawMonths)
     ? Math.min(24, Math.max(1, Math.floor(rawMonths)))
     : 12;
+  const startParam = parseDate(request.nextUrl.searchParams.get("start_date"));
+  const endParam = parseDate(request.nextUrl.searchParams.get("end_date"));
+  const accountId = request.nextUrl.searchParams.get("account_id");
 
-  const now = new Date();
-  const start = new Date(now.getFullYear(), now.getMonth() - (months - 1), 1);
-  const startDate = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, "0")}-01`;
-  const endDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(
-    now.getDate()
-  ).padStart(2, "0")}`;
+  let start = startParam ? new Date(startParam.getFullYear(), startParam.getMonth(), 1) : null;
+  let end = endParam;
 
-  const { data: txns, error: dbError } = await supabase
+  if (!start || !end) {
+    const now = new Date();
+    start = new Date(now.getFullYear(), now.getMonth() - (months - 1), 1);
+    end = now;
+  }
+
+  if (start.getTime() > end.getTime()) {
+    return error("start_date must be before or equal to end_date", 400);
+  }
+
+  const startDate = formatDate(start);
+  const endDate = formatDate(end);
+
+  let query = supabase
     .from("transactions")
     .select("txn_date, amount_base")
     .is("deleted_at", null)
@@ -31,13 +56,22 @@ export async function GET(request: NextRequest) {
     .gte("txn_date", startDate)
     .lte("txn_date", endDate);
 
+  if (accountId) {
+    query = query.eq("account_id", accountId);
+  }
+
+  const { data: txns, error: dbError } = await query;
+
   if (dbError) return error("Failed to fetch monthly trend", 500);
 
   const monthly = new Map<string, { income: number; spending: number }>();
 
-  for (let i = 0; i < months; i++) {
-    const d = new Date(start.getFullYear(), start.getMonth() + i, 1);
-    monthly.set(monthKey(d), { income: 0, spending: 0 });
+  for (
+    let cursor = new Date(start.getFullYear(), start.getMonth(), 1);
+    cursor.getTime() <= end.getTime();
+    cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1)
+  ) {
+    monthly.set(monthKey(cursor), { income: 0, spending: 0 });
   }
 
   for (const txn of txns ?? []) {
