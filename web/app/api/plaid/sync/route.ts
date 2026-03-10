@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { getAuth } from "@/lib/api/auth";
 import { json, error } from "@/lib/api/response";
 import { plaidClient } from "@/lib/plaid/client";
+import { upsertPlaidAccounts } from "@/lib/plaid/accounts";
 import {
   mapPlaidCategory,
   getDefaultCategories,
@@ -26,7 +27,18 @@ export async function POST(request: NextRequest) {
 
   if (!plaidItem) return error("Plaid item not found", 404);
 
-  // Build a map of plaid_account_id → account.id for fast lookup
+  const accountsResponse = await plaidClient.accountsGet({
+    access_token: plaidItem.access_token_enc,
+  });
+
+  await upsertPlaidAccounts({
+    supabase,
+    userId: user.id,
+    plaidItemId: plaid_item_id,
+    accounts: accountsResponse.data.accounts,
+  });
+
+  // Refresh the local account map after upserting every current Plaid account.
   const { data: accounts } = await supabase
     .from("accounts")
     .select("id, plaid_account_id")

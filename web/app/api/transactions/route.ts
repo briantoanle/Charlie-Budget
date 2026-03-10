@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { getAuth } from "@/lib/api/auth";
 import { json, error, created } from "@/lib/api/response";
+import { shouldExcludeFromSpending } from "@/lib/spending";
 
 export async function GET(request: NextRequest) {
   const auth = await getAuth();
@@ -65,6 +66,11 @@ export async function GET(request: NextRequest) {
     category_name: row.categories?.name ?? null,
     account_id: row.account_id,
     account_name: row.accounts?.name ?? null,
+    excludeFromSpending: shouldExcludeFromSpending({
+      merchant: row.merchant,
+      note: row.note,
+      account_name: row.accounts?.name ?? null,
+    }),
   }));
 
   return json({

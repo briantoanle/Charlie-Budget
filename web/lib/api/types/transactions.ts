@@ -12,6 +12,7 @@ export interface TransactionResponse {
   category_name: string | null;
   account_id: string;
   account_name: string;
+  excludeFromSpending: boolean;
 }
 
 export interface TransactionPagination {

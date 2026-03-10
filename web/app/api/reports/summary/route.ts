@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { getAuth } from "@/lib/api/auth";
 import { json, error } from "@/lib/api/response";
+import { shouldExcludeFromSpending } from "@/lib/spending";
 
 function parseDate(value: string | null): Date | null {
   if (!value) return null;
@@ -30,6 +31,11 @@ function monthSpan(start: Date, end: Date) {
 type SummaryRow = {
   amount_base: number | null;
   category_id: string | null;
+  merchant: string | null;
+  note: string | null;
+  accounts?: {
+    name?: string | null;
+  } | null;
   categories?: {
     name?: string | null;
     kind?: string | null;
@@ -54,6 +60,16 @@ function summarize(rows: SummaryRow[], start: Date, end: Date) {
 
     if (amount > 0) {
       income += amount;
+      continue;
+    }
+
+    if (
+      shouldExcludeFromSpending({
+        merchant: row.merchant,
+        note: row.note,
+        account_name: row.accounts?.name ?? null,
+      })
+    ) {
       continue;
     }
 
@@ -126,7 +142,7 @@ export async function GET(request: NextRequest) {
   const comparisonStart = new Date(comparisonEnd);
   comparisonStart.setDate(comparisonStart.getDate() - (periodDays - 1));
 
-  const selectClause = "amount_base, category_id, categories(name, kind)";
+  const selectClause = "amount_base, category_id, merchant, note, accounts(name), categories(name, kind)";
 
   let currentQuery = supabase
     .from("transactions")

@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { getAuth } from "@/lib/api/auth";
 import { json, error } from "@/lib/api/response";
 import { plaidClient } from "@/lib/plaid/client";
+import { upsertPlaidAccounts } from "@/lib/plaid/accounts";
 
 export async function POST(request: NextRequest) {
   const auth = await getAuth();
@@ -22,15 +23,18 @@ export async function POST(request: NextRequest) {
     });
     const { access_token, item_id } = exchangeResponse.data;
 
-    // Store plaid item (sandbox: no encryption)
+    // Store or refresh the Plaid item so relinks don't fail on item_id uniqueness.
     const { data: plaidItem, error: insertError } = await supabase
       .from("plaid_items")
-      .insert({
+      .upsert({
         user_id: user.id,
         institution_id,
         institution_name,
         access_token_enc: access_token,
         item_id,
+        needs_reauth: false,
+      }, {
+        onConflict: "item_id",
       })
       .select()
       .single();
@@ -39,23 +43,12 @@ export async function POST(request: NextRequest) {
 
     // Fetch accounts from Plaid
     const accountsResponse = await plaidClient.accountsGet({ access_token });
-
-    const accountRows = accountsResponse.data.accounts.map((acct) => ({
-      user_id: user.id,
-      name: acct.mask ? `${acct.name} ••${acct.mask}` : acct.name,
-      type: acct.subtype ?? acct.type,
-      source: "plaid" as const,
-      plaid_account_id: acct.account_id,
-      plaid_item_id: plaidItem.id,
-      currency: (acct.balances.iso_currency_code ?? "USD").toUpperCase(),
-      current_balance: acct.balances.current,
-      balance_as_of: new Date().toISOString(),
-    }));
-
-    const { data: insertedAccounts } = await supabase
-      .from("accounts")
-      .insert(accountRows)
-      .select();
+    const insertedAccounts = await upsertPlaidAccounts({
+      supabase,
+      userId: user.id,
+      plaidItemId: plaidItem.id,
+      accounts: accountsResponse.data.accounts,
+    });
 
     // Kick off initial sync
     try {

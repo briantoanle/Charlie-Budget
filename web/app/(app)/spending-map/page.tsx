@@ -3,9 +3,11 @@
 export const dynamic = "force-dynamic";
 
 import nextDynamic from "next/dynamic";
-import { useState } from "react";
-import { MapPin, Search } from "lucide-react";
+import { useMemo, useState } from "react";
+import { CalendarRange, MapPin, Search } from "lucide-react";
 import { useAccounts, useCategories, useSpendingMap } from "@/lib/api/hooks";
+import { Button } from "@/components/ui/button";
+import { DateRangePicker, type DateRangeValue } from "@/components/ui/date-range-picker";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -28,23 +30,38 @@ const SpendingMapCanvas = nextDynamic(
 );
 
 export default function SpendingMapPage() {
+  const defaultRange = useMemo(() => getPresetRange("month"), []);
   const [filters, setFilters] = useState({
     search: "",
     account_id: "",
     category_id: "",
-    start_date: "",
-    end_date: "",
+    start_date: defaultRange.startDate,
+    end_date: defaultRange.endDate,
   });
 
   const { data: accounts } = useAccounts();
   const { data: categories } = useCategories();
   const { data, isLoading, error } = useSpendingMap(filters);
+  const dateRange = useMemo<DateRangeValue>(
+    () => ({
+      startDate: filters.start_date,
+      endDate: filters.end_date,
+    }),
+    [filters.end_date, filters.start_date]
+  );
+  const calendarPresets = useMemo(
+    () => [
+      { label: "Last 7 Days", getRange: () => getPresetRange("week") },
+      { label: "This Month", getRange: () => getPresetRange("month") },
+      { label: "Last 12 Months", getRange: () => getPresetRange("year") },
+    ],
+    []
+  );
   const hasActiveFilters =
     !!filters.search ||
     !!filters.account_id ||
     !!filters.category_id ||
-    !!filters.start_date ||
-    !!filters.end_date;
+    !isSameRangeValue(dateRange, defaultRange);
   const hasIncompleteDateRange = Boolean(filters.start_date) !== Boolean(filters.end_date);
 
   return (
@@ -56,71 +73,102 @@ export default function SpendingMapPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-5">
-        <div className="relative md:col-span-2">
-          <label className="mb-1 block text-xs text-muted-foreground">Merchant</label>
-          <Search className="absolute top-[calc(50%+10px)] left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={filters.search}
-            onChange={(e) => setFilters((prev) => ({ ...prev, search: e.target.value }))}
-            placeholder="Search merchant..."
-            className="pl-9"
-          />
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,1fr)]">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+          <div className="relative md:col-span-2">
+            <label className="mb-1 block text-xs text-muted-foreground">Merchant</label>
+            <Search className="absolute top-[calc(50%+10px)] left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={filters.search}
+              onChange={(e) => setFilters((prev) => ({ ...prev, search: e.target.value }))}
+              placeholder="Search merchant..."
+              className="pl-9"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-muted-foreground">Account</label>
+            <Select
+              value={filters.account_id || "all"}
+              onValueChange={(v) => setFilters((prev) => ({ ...prev, account_id: v === "all" ? "" : v }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="All accounts" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All accounts</SelectItem>
+                {accounts?.map((a) => (
+                  <SelectItem key={a.id} value={a.id}>
+                    {a.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-muted-foreground">Category</label>
+            <Select
+              value={filters.category_id || "all"}
+              onValueChange={(v) => setFilters((prev) => ({ ...prev, category_id: v === "all" ? "" : v }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="All categories" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All categories</SelectItem>
+                <SelectItem value="uncategorized">Uncategorized</SelectItem>
+                {categories?.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
-        <div>
-          <label className="mb-1 block text-xs text-muted-foreground">Account</label>
-          <Select
-            value={filters.account_id || "all"}
-            onValueChange={(v) => setFilters((prev) => ({ ...prev, account_id: v === "all" ? "" : v }))}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="All accounts" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All accounts</SelectItem>
-              {accounts?.map((a) => (
-                <SelectItem key={a.id} value={a.id}>
-                  {a.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div>
-          <label className="mb-1 block text-xs text-muted-foreground">Category</label>
-          <Select
-            value={filters.category_id || "all"}
-            onValueChange={(v) => setFilters((prev) => ({ ...prev, category_id: v === "all" ? "" : v }))}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="All categories" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All categories</SelectItem>
-              <SelectItem value="uncategorized">Uncategorized</SelectItem>
-              {categories?.map((c) => (
-                <SelectItem key={c.id} value={c.id}>
-                  {c.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div>
-          <label className="mb-1 block text-xs text-muted-foreground">From</label>
-          <Input
-            type="date"
-            value={filters.start_date}
-            onChange={(e) => setFilters((prev) => ({ ...prev, start_date: e.target.value }))}
-          />
-        </div>
-        <div>
-          <label className="mb-1 block text-xs text-muted-foreground">To</label>
-          <Input
-            type="date"
-            value={filters.end_date}
-            onChange={(e) => setFilters((prev) => ({ ...prev, end_date: e.target.value }))}
-          />
+
+        <div className="rounded-2xl border border-border/70 bg-white p-4 shadow-sm">
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+              <CalendarRange className="size-3.5" />
+              <span>Timeframe</span>
+            </div>
+            <DateRangePicker
+              value={dateRange}
+              onChange={(nextRange) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  start_date: nextRange.startDate,
+                  end_date: nextRange.endDate,
+                }))
+              }
+              presets={calendarPresets}
+              className="min-w-0"
+            />
+            <div className="flex flex-wrap gap-2">
+              {SPENDING_MAP_PRESETS.map((preset) => {
+                const active = isSameRangeValue(dateRange, getPresetRange(preset.key));
+                return (
+                  <Button
+                    key={preset.key}
+                    type="button"
+                    size="sm"
+                    variant={active ? "default" : "outline"}
+                    onClick={() => {
+                      const range = getPresetRange(preset.key);
+                      setFilters((prev) => ({
+                        ...prev,
+                        start_date: range.startDate,
+                        end_date: range.endDate,
+                      }));
+                    }}
+                    className="rounded-full px-4"
+                  >
+                    {preset.label}
+                  </Button>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -139,8 +187,8 @@ export default function SpendingMapPage() {
               search: "",
               account_id: "",
               category_id: "",
-              start_date: "",
-              end_date: "",
+              start_date: defaultRange.startDate,
+              end_date: defaultRange.endDate,
             })
           }
         >
@@ -229,3 +277,48 @@ export default function SpendingMapPage() {
     </div>
   );
 }
+
+function getPresetRange(preset: "week" | "month" | "year"): DateRangeValue {
+  const today = noon(new Date());
+
+  if (preset === "week") {
+    const start = new Date(today);
+    start.setDate(start.getDate() - 6);
+    return {
+      startDate: formatDateValue(start),
+      endDate: formatDateValue(today),
+    };
+  }
+
+  if (preset === "month") {
+    return {
+      startDate: formatDateValue(new Date(today.getFullYear(), today.getMonth(), 1)),
+      endDate: formatDateValue(today),
+    };
+  }
+
+  return {
+    startDate: formatDateValue(new Date(today.getFullYear() - 1, today.getMonth(), today.getDate())),
+    endDate: formatDateValue(today),
+  };
+}
+
+function isSameRangeValue(left: DateRangeValue, right: DateRangeValue) {
+  return left.startDate === right.startDate && left.endDate === right.endDate;
+}
+
+function noon(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12);
+}
+
+function formatDateValue(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
+    date.getDate()
+  ).padStart(2, "0")}`;
+}
+
+const SPENDING_MAP_PRESETS: Array<{ key: "week" | "month" | "year"; label: string }> = [
+  { key: "week", label: "1W" },
+  { key: "month", label: "1M" },
+  { key: "year", label: "1Y" },
+];

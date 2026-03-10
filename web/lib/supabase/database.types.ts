@@ -44,7 +44,10 @@ export type Database = {
           id: string
           name: string
           plaid_account_id: string | null
+          persistent_account_id: string | null
           plaid_item_id: string | null
+          plaid_subtype: string | null
+          plaid_type: string | null
           source: string
           type: string
           user_id: string
@@ -58,7 +61,10 @@ export type Database = {
           id?: string
           name: string
           plaid_account_id?: string | null
+          persistent_account_id?: string | null
           plaid_item_id?: string | null
+          plaid_subtype?: string | null
+          plaid_type?: string | null
           source: string
           type: string
           user_id: string
@@ -72,7 +78,10 @@ export type Database = {
           id?: string
           name?: string
           plaid_account_id?: string | null
+          persistent_account_id?: string | null
           plaid_item_id?: string | null
+          plaid_subtype?: string | null
+          plaid_type?: string | null
           source?: string
           type?: string
           user_id?: string
