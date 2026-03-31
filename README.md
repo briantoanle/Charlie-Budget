@@ -5,7 +5,17 @@ A full-stack personal finance app for budgeting, transaction tracking, account a
 Charlie Budget helps users connect financial accounts, categorize spending, manage monthly budgets, and visualize cashflow with a secure, modern web architecture.
 
 ---
+## Product Preview
 
+### Financial Overview Dashboard
+![Financial Overview Dashboard](./docs/assets/dashboard-overview.png)
+
+Core monthly snapshot with cash flow, income vs spend, available balance, upcoming bills, and recent transactions.
+
+### Spending Map (Geo Insights)
+![Spending Map](./docs/assets/spending-map.png)
+
+Map-based visualization of card spend hotspots using Plaid merchant location metadata, with merchant/account/category/timeframe filters.
 ## Table of Contents
 
 - [Overview](#overview)
