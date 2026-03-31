@@ -8,12 +8,12 @@ Charlie Budget helps users connect financial accounts, categorize spending, mana
 ## Product Preview
 
 ### Financial Overview Dashboard
-![Financial Overview Dashboard](./docs/assets/dashboard-overview.png)
+![Financial Overview Dashboard](/docs/assets/dashboard-overview.png)
 
 Core monthly snapshot with cash flow, income vs spend, available balance, upcoming bills, and recent transactions.
 
 ### Spending Map (Geo Insights)
-![Spending Map](./docs/assets/spending-map.png)
+![Spending Map](/docs/assets/spending-map.png)
 
 Map-based visualization of card spend hotspots using Plaid merchant location metadata, with merchant/account/category/timeframe filters.
 ## Table of Contents
