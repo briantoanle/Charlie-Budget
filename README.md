@@ -202,30 +202,4 @@ Use seeded test account for local verification:
 | [docs/supabase-setup.md](docs/supabase-setup.md) | Local setup, Plaid sandbox, and deployment guidance |
 | [web/README.md](web/README.md) | Frontend-specific setup and conventions |
 
----
-
-## Recruiter Review (README Quality Check)
-
-### Score: **9.4 / 10**
-
-### What this README does well
-
-- Clearly communicates product scope and business value.
-- Explains architecture and security posture in a trustworthy way.
-- Gives realistic local setup instructions and practical test access.
-- Includes roadmap clarity that helps set engineering expectations.
-
-### Why this is not yet a perfect 10
-
-- Could be stronger with visual proof (screenshots/GIF walkthroughs).
-- Could include measurable impact metrics (e.g., sync speed, error rate, perf).
-- Could add explicit “Contributing” + “Known Limitations” sections for team onboarding.
-
-### What would make it 10/10
-
-Add:
-
-1. Product screenshots (dashboard, transactions, budgets)
-2. A short “Demo flow” section (3–5 steps)
-3. Contributing guide + coding standards summary
-4. Known limitations and future milestones with rough timelines
+-
